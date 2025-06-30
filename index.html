@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wine Spectator Top 100 - 2024 Edition</title>
     
+    <!-- External libraries for React, styling, and charts -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
+    <!-- Custom CSS Styles for the application -->
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: Georgia, 'Times New Roman', serif; background-color: #fafafa; }
@@ -48,8 +50,10 @@
     </style>
 </head>
 <body>
+    <!-- This div is the entry point where the React application will be rendered. -->
     <div id="root"></div>
 
-    <script type="text/babel" src="app.jsx"></script>
+    <!-- This script tag loads your app.jsx file from GitHub using the correct jsDelivr URL. -->
+    <script type="text/babel" src="https://cdn.jsdelivr.net/gh/mcapace/wine-top-100@main/app.jsx"></script>
 </body>
 </html>
