@@ -692,3 +692,123 @@ const Footer = () => {
                         </div>
                     </div>
                 </div>
+                <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
+                    <p>&copy; 2025 Wine Spectator. All rights reserved. | <a href="#" className="hover:text-white">Privacy Policy</a> | <a href="#" className="hover:text-white">Terms of Service</a></p>
+                </div>
+            </div>
+        </footer>
+    );
+};
+
+function HomePage() {
+    const [filters, setFilters] = useState({
+        search: '',
+        type: [],
+        country: [],
+        region: [],
+        priceRange: [0, 20000],
+        scoreRange: [0, 100],
+        vintage: []
+    });
+    const [sortBy, setSortBy] = useState('rank');
+    const [selectedWine, setSelectedWine] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [tastingData, setTastingData] = useState(initializeTastingData());
+
+    const filteredAndSortedWines = useMemo(() => {
+        const filtered = wines.filter(wine => {
+            if (filters.search) {
+                const searchTerm = filters.search.toLowerCase();
+                if (!wine.name.toLowerCase().includes(searchTerm) &&
+                    !wine.winery.toLowerCase().includes(searchTerm) &&
+                    !wine.region.toLowerCase().includes(searchTerm) &&
+                    !wine.country.toLowerCase().includes(searchTerm) &&
+                    !wine.varietal.toLowerCase().includes(searchTerm)) {
+                    return false;
+                }
+            }
+            if (filters.type.length > 0 && !filters.type.includes(wine.type)) return false;
+            if (filters.country.length > 0 && !filters.country.includes(wine.country)) return false;
+            if (filters.vintage.length > 0 && !filters.vintage.includes(wine.vintage.toString())) return false;
+            return true;
+        });
+
+        const sorted = [...filtered].sort((a, b) => {
+            switch (sortBy) {
+                case 'rank': return a.rank - b.rank;
+                case 'score-desc': return b.score - a.score;
+                case 'score-asc': return a.score - b.score;
+                case 'price-desc': return b.price - a.price;
+                case 'price-asc': return a.price - b.price;
+                case 'vintage-desc': return b.vintage - a.vintage;
+                case 'vintage-asc': return a.vintage - b.vintage;
+                case 'name': return a.name.localeCompare(b.name);
+                default: return a.rank - b.rank;
+            }
+        });
+        return sorted;
+    }, [filters, sortBy]);
+
+    const handleTastingChange = (wineId, type, checked) => {
+        const newTastingData = { ...tastingData };
+        if (checked) {
+            if (!newTastingData[type].includes(wineId)) {
+                newTastingData[type] = [...newTastingData[type], wineId];
+            }
+        } else {
+            newTastingData[type] = newTastingData[type].filter(id => id !== wineId);
+        }
+        setTastingData(newTastingData);
+        localStorage.setItem('wineTastings', JSON.stringify(newTastingData));
+    };
+
+    return (
+        <div className="min-h-screen" style={{ backgroundColor: '#fafafa' }}>
+            <header className="header-bg text-white shadow-lg">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                    <div className="text-center">
+                        <div className="mb-6">
+                            <img src="https://i.ibb.co/27L2JKF/WSlogo-White.png" alt="Wine Spectator" className="h-16 mx-auto" />
+                        </div>
+                        <h1 className="text-4xl font-bold text-white tracking-tight mb-2">Top 100 Wines of 2025</h1>
+                        <p className="text-lg text-gray-200 max-w-3xl mx-auto">Our editors' selection of the year's most exciting wines from around the world</p>
+                    </div>
+                </div>
+            </header>
+            <div className="bg-white mx-4 sm:mx-6 lg:mx-auto max-w-6xl -mt-8 rounded shadow-lg mb-12 relative z-10">
+                <div className="p-8">
+                    <div className="prose prose-lg max-w-none">
+                        <p className="text-gray-700 leading-relaxed mb-4">Wine Spectator's Top 100 is our editors' annual selection of the year's most exciting wines. These 100 bottles represent the pinnacle of quality, value, and availability - wines that don't just score high, but deliver exceptional drinking experiences and tell compelling stories.</p>
+                        <p className="text-gray-700 leading-relaxed mb-4">Our expert panel tastes more than 15,000 wines blind each year. From this extensive evaluation, we select these 100 wines that exemplify excellence across all categories - from everyday values to once-in-a-lifetime splurges.</p>
+                        <p className="text-gray-700 leading-relaxed">This year's list celebrates both tradition and innovation, featuring time-honored estates alongside exciting new discoveries. Each wine has earned its place through a combination of outstanding quality, fair pricing relative to its peers, and sufficient production to be found in the market.</p>
+                    </div>
+                </div>
+            </div>
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 space-y-12">
+                <TastingTracker tastingData={tastingData} />
+                <AnalyticsDashboard wines={filteredAndSortedWines} />
+                <WineFilters filters={filters} onFiltersChange={setFilters} sortBy={sortBy} onSortChange={setSortBy} totalWines={wines.length} filteredCount={filteredAndSortedWines.length} />
+                {filteredAndSortedWines.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {filteredAndSortedWines.map((wine) => (
+                            <WineCard key={wine.id} wine={wine} onViewDetails={(w) => { setSelectedWine(w); setIsModalOpen(true); }} tastingData={tastingData} onTastingChange={handleTastingChange} />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-20">
+                        <h3 className="text-2xl font-semibold text-gray-900 mb-2">No wines found</h3>
+                        <p className="text-gray-600 mb-6">Try adjusting your filters to discover more exceptional wines.</p>
+                        <button onClick={() => setFilters({ search: '', type: [], country: [], region: [], priceRange: [0, 20000], scoreRange: [0, 100], vintage: [] })} className="bg-red-800 text-white px-6 py-2 rounded hover:bg-red-900">
+                            Reset All Filters
+                        </button>
+                    </div>
+                )}
+            </main>
+            <Footer />
+            <WineDetailModal wine={selectedWine} isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setSelectedWine(null); }} tastingData={tastingData} onTastingChange={handleTastingChange} />
+            <AIAssistant wines={wines} />
+        </div>
+    );
+}
+
+ReactDOM.render(<HomePage />, document.getElementById('root'));
