@@ -9,6 +9,29 @@
     <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Make Firebase services available to React components
+        window.firebaseServices = {
+            initializeApp,
+            getAuth,
+            signInAnonymously,
+            onAuthStateChanged,
+            getFirestore,
+            doc,
+            getDoc,
+            setDoc,
+            updateDoc,
+            arrayUnion,
+            arrayRemove
+        };
+    </script>
+
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body { 
@@ -111,7 +134,7 @@
         /* Hero section with GIF background */
         .hero-section {
             position: relative;
-            height: 80vh;
+            height: 60vh;
             overflow: hidden;
             background-color: #000;
             background-image: url('https://i.ibb.co/4q0j4YR/20250630-1638-Elegant-Wine-Pour-simple-compose-01jz190k0qeahvh5hwvrgbmyt4.gif');
@@ -123,7 +146,7 @@
         /* Mobile hero height */
         @media (max-width: 768px) {
             .hero-section {
-                height: 60vh;
+                height: 50vh;
             }
         }
         
@@ -499,6 +522,19 @@
                 min-width: 44px;
             }
         }
+
+        /* Sparkling animation for badge */
+        @keyframes sparkling-gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .sparkling-badge {
+            background: linear-gradient(45deg, #a0d2eb, #e5eaf5, #a0d2eb, #e5eaf5);
+            background-size: 400% 400%;
+            animation: sparkling-gradient 4s ease infinite;
+        }
     </style>
 </head>
 <body class="animated-bg">
@@ -606,11 +642,6 @@
             </div>
         );
 
-        const initializeTastingData = () => {
-            const stored = localStorage.getItem('wineTastings');
-            return stored ? JSON.parse(stored) : { tasted: [], wantToTaste: [] };
-        };
-
         // Fixed dropdown with proper z-index and positioning
         const MultiSelect = ({ options, selected, onChange, placeholder }) => {
             const [isOpen, setIsOpen] = useState(false);
@@ -674,7 +705,7 @@
                 try {
                     const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
                     const payload = { contents: chatHistory };
-                    const apiKey = "AIzaSyAfm3cqAwpTaLpxsJS-mHL2gPAQ-xjZzkI"; 
+                    const apiKey = "AIzaSyD1LILipy1WfSTTleX7Nu49glN8FT_Xx-8"; 
                     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                     const apiResponse = await fetch(apiUrl, {
@@ -784,6 +815,19 @@
                 return 'bg-gradient-to-r from-red-800 to-red-900';
             };
 
+            const getTypeBadgeClass = (type) => {
+                switch (type) {
+                    case 'Red':
+                        return 'bg-red-100 text-red-800';
+                    case 'White':
+                        return 'bg-white text-black';
+                    case 'Sparkling':
+                        return 'sparkling-badge text-blue-800';
+                    default:
+                        return 'bg-gray-100 text-gray-800';
+                }
+            };
+
             return (
                 <div className="wine-card rounded-xl overflow-hidden animate-fade-in">
                     <div className="wine-card-content cursor-pointer" onClick={() => onViewDetails(wine)}>
@@ -812,7 +856,7 @@
                             </div>
                             <div className="flex justify-between items-center pt-3 mt-3 border-t">
                                 <span className="text-lg font-bold text-red-800">${wine.price}</span>
-                                <span className="text-sm text-gray-500 px-2 py-1 bg-gray-100 rounded-full">{wine.type}</span>
+                                <span className={`text-sm px-2 py-1 rounded-full ${getTypeBadgeClass(wine.type)}`}>{wine.type}</span>
                             </div>
                         </div>
                     </div>
@@ -845,6 +889,19 @@
                 return 'bg-gradient-to-r from-red-800 to-red-900';
             };
 
+            const getTypeBadgeClass = (type) => {
+                switch (type) {
+                    case 'Red':
+                        return 'bg-red-100 text-red-800';
+                    case 'White':
+                        return 'bg-white text-black';
+                    case 'Sparkling':
+                        return 'sparkling-badge text-blue-800';
+                    default:
+                        return 'bg-gray-100 text-gray-800';
+                }
+            };
+
             return (
                 <div className="bg-white rounded-lg shadow-lg p-4 hover:shadow-xl transition-all duration-300 cursor-pointer animate-fade-in" onClick={() => onViewDetails(wine)}>
                     <div className="flex items-center gap-4">
@@ -858,7 +915,7 @@
                                     <p className="text-sm text-gray-600 line-clamp-1">{wine.winery} • {wine.vintage}</p>
                                     <div className="flex items-center gap-3 mt-1">
                                         <span className="text-xs text-gray-500">{wine.region}, {wine.country}</span>
-                                        <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-full">{wine.type}</span>
+                                        <span className={`text-xs px-2 py-0.5 rounded-full ${getTypeBadgeClass(wine.type)}`}>{wine.type}</span>
                                     </div>
                                 </div>
                                 <div className="text-right">
@@ -1287,25 +1344,32 @@
         };
 
         // Enhanced Tasting Tracker
-        const TastingTracker = ({ tastingData }) => {
+        const TastingTracker = ({ tastingData, userId }) => {
             return (
                 <div className="glass-card rounded-xl p-6 sm:p-8 text-center mb-8">
                     <h3 className="text-xl sm:text-2xl font-bold text-white mb-4">
-                        Your Wine Journey
+                        My Wine Cellar
                     </h3>
-                    <p className="text-gray-300 mb-6">Track your progress through the Top 100</p>
-                    <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-8 text-lg">
-                        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-3 rounded-full">
-                            <span className="text-white">
-                                Tasted: <strong className="text-2xl">{tastingData.tasted.length}</strong>
-                            </span>
-                        </div>
-                        <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-3 rounded-full">
-                            <span className="text-white">
-                                Wishlist: <strong className="text-2xl">{tastingData.wantToTaste.length}</strong>
-                            </span>
-                        </div>
-                    </div>
+                    {userId ? (
+                        <>
+                            <p className="text-gray-400 mb-2 text-xs">Your User ID (share with friends!): {userId}</p>
+                            <p className="text-gray-300 mb-6">Track your progress through the Top 100</p>
+                            <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-8 text-lg">
+                                <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-3 rounded-full">
+                                    <span className="text-white">
+                                        Tasted: <strong className="text-2xl">{tastingData.tasted.length}</strong>
+                                    </span>
+                                </div>
+                                <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-3 rounded-full">
+                                    <span className="text-white">
+                                        Wishlist: <strong className="text-2xl">{tastingData.wantToTaste.length}</strong>
+                                    </span>
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <p className="text-gray-400">Initializing your personal cellar...</p>
+                    )}
                 </div>
             );
         };
@@ -1479,17 +1543,83 @@
             const [sortBy, setSortBy] = useState('rank');
             const [selectedWine, setSelectedWine] = useState(null);
             const [isModalOpen, setIsModalOpen] = useState(false);
-            const [tastingData, setTastingData] = useState(initializeTastingData());
+            const [tastingData, setTastingData] = useState({ tasted: [], wantToTaste: [] });
             const [scrolled, setScrolled] = useState(false);
             const [isCondensedView, setIsCondensedView] = useState(false);
+            const [userId, setUserId] = useState(null);
+            const [db, setDb] = useState(null);
 
+            // Initialize Firebase and handle user authentication
             useEffect(() => {
-                const handleScroll = () => {
-                    setScrolled(window.scrollY > 100);
+                const firebaseConfig = {
+                    apiKey: "AIzaSyD1LILipy1WfSTTleX7Nu49glN8FT_Xx-8",
+                    authDomain: "wine-app-d1c79.firebaseapp.com",
+                    projectId: "wine-app-d1c79",
+                    storageBucket: "wine-app-d1c79.appspot.com",
+                    messagingSenderId: "60612991798",
+                    appId: "1:60612991798:web:fb052fa21e773dcd92b197"
                 };
-                window.addEventListener('scroll', handleScroll);
-                return () => window.removeEventListener('scroll', handleScroll);
+
+                const { initializeApp, getAuth, signInAnonymously, onAuthStateChanged, getFirestore, doc, getDoc, setDoc } = window.firebaseServices;
+                
+                try {
+                    const app = initializeApp(firebaseConfig);
+                    const auth = getAuth(app);
+                    const firestore = getFirestore(app);
+                    setDb(firestore);
+
+                    onAuthStateChanged(auth, async (user) => {
+                        if (user) {
+                            // User is signed in.
+                            setUserId(user.uid);
+                            const userDocRef = doc(firestore, "users", user.uid);
+                            const userDoc = await getDoc(userDocRef);
+                            if (userDoc.exists()) {
+                                setTastingData(userDoc.data());
+                            } else {
+                                // Create a new document for the new user
+                                await setDoc(userDocRef, { tasted: [], wantToTaste: [] });
+                            }
+                        } else {
+                            // User is signed out.
+                            signInAnonymously(auth).catch((error) => {
+                                console.error("Anonymous sign-in failed:", error);
+                            });
+                        }
+                    });
+                } catch (error) {
+                    console.error("Firebase initialization error:", error);
+                }
+
             }, []);
+
+            const handleTastingChange = async (wineId, type, checked) => {
+                if (!userId || !db) return;
+
+                const userDocRef = doc(db, "users", userId);
+                const { updateDoc, arrayUnion, arrayRemove } = window.firebaseServices;
+
+                // Optimistic UI update
+                const newTastingData = { ...tastingData };
+                if (checked) {
+                    newTastingData[type] = [...newTastingData[type], wineId];
+                } else {
+                    newTastingData[type] = newTastingData[type].filter(id => id !== wineId);
+                }
+                setTastingData(newTastingData);
+
+                // Sync with Firestore
+                try {
+                    if (checked) {
+                        await updateDoc(userDocRef, { [type]: arrayUnion(wineId) });
+                    } else {
+                        await updateDoc(userDocRef, { [type]: arrayRemove(wineId) });
+                    }
+                } catch (error) {
+                    console.error("Error updating tasting data:", error);
+                    // Revert UI on error if needed
+                }
+            };
 
             const filteredAndSortedWines = useMemo(() => {
                 const filtered = wines.filter(wine => {
@@ -1525,19 +1655,6 @@
                 return sorted;
             }, [filters, sortBy]);
 
-            const handleTastingChange = (wineId, type, checked) => {
-                const newTastingData = { ...tastingData };
-                if (checked) {
-                    if (!newTastingData[type].includes(wineId)) {
-                        newTastingData[type] = [...newTastingData[type], wineId];
-                    }
-                } else {
-                    newTastingData[type] = newTastingData[type].filter(id => id !== wineId);
-                }
-                setTastingData(newTastingData);
-                localStorage.setItem('wineTastings', JSON.stringify(newTastingData));
-            };
-
             return (
                 <div className="min-h-screen">
                     <Navbar scrolled={scrolled} />
@@ -1558,7 +1675,7 @@
                     </div>
                     
                     <main id="wines" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 space-y-8 sm:space-y-12">
-                        <TastingTracker tastingData={tastingData} />
+                        <TastingTracker tastingData={tastingData} userId={userId} />
                         <AnalyticsDashboard wines={filteredAndSortedWines} />
                         <WineFilters filters={filters} onFiltersChange={setFilters} sortBy={sortBy} onSortChange={setSortBy} totalWines={wines.length} filteredCount={filteredAndSortedWines.length} isCondensedView={isCondensedView} onViewToggle={setIsCondensedView} />
                         {filteredAndSortedWines.length > 0 ? (
