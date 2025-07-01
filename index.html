@@ -27,19 +27,6 @@
             position: relative;
         }
         
-        /* Hide JW Player controls globally */
-        .video-wrapper .jw-controls-backdrop,
-        .video-wrapper .jw-controls,
-        .video-wrapper .jw-title,
-        .video-wrapper .jw-logo,
-        .video-wrapper .jw-flag-user-inactive .jw-controls-backdrop,
-        .video-wrapper .jw-controlbar,
-        .video-wrapper .jw-display-icon-container {
-            display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-        }
-        
         :root {
             --ws-primary: #8c0004;
             --ws-primary-dark: #6b0003;
@@ -122,7 +109,7 @@
         }
         
         /* Video hero section */
-        .video-hero {
+        .hero-section {
             position: relative;
             height: 80vh;
             overflow: hidden;
@@ -134,47 +121,12 @@
         
         /* Mobile hero height */
         @media (max-width: 768px) {
-            .video-hero {
+            .hero-section {
                 height: 60vh;
             }
         }
         
-        .video-bg {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            min-width: 100%;
-            min-height: 100%;
-            width: auto;
-            height: auto;
-            transform: translate(-50%, -50%);
-            object-fit: cover;
-        }
-        
-        /* JW Player specific styles to hide controls and ensure autoplay */
-        .video-bg .jwplayer {
-            position: absolute !important;
-            width: 100% !important;
-            height: 100% !important;
-        }
-        
-        .video-bg .jw-controls,
-        .video-bg .jw-title,
-        .video-bg .jw-logo {
-            display: none !important;
-        }
-        
-        .video-bg .jw-media {
-            cursor: default !important;
-        }
-        
-        .video-bg .jw-state-idle .jw-icon-display,
-        .video-bg .jw-state-paused .jw-icon-display,
-        .video-bg .jw-state-buffering .jw-icon-display {
-            display: none !important;
-        }
-        
-        .video-wrapper {
+        .hero-background {
             position: absolute;
             top: 0;
             left: 0;
@@ -184,7 +136,13 @@
             pointer-events: none;
         }
         
-        .video-overlay {
+        .hero-background img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .hero-overlay {
             position: absolute;
             inset: 0;
             background: linear-gradient(180deg, 
@@ -213,16 +171,6 @@
             pointer-events: all;
         }
 
-        /* Video fallback - hidden by default */
-        .video-fallback {
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #1a0a0a 0%, #8c0004 100%);
-            display: none;
-            align-items: center;
-            justify-content: center;
-        }
-        
         /* Animated background */
         .animated-bg {
             background: linear-gradient(45deg, #0a0a0a 0%, #1a0a0a 50%, #0a0a0a 100%);
@@ -776,13 +724,13 @@
                         <div className="relative group">
                             <button
                                 onClick={() => setIsOpen(true)}
-                                className="bg-white p-2 rounded-full shadow-2xl hover:scale-110 transition-all duration-300"
+                                className="bg-white h-16 w-16 p-1 rounded-full shadow-2xl hover:scale-110 transition-all duration-300 flex items-center justify-center"
                             >
-                                <img src="https://i.ibb.co/tMYf5Bgt/dv-vinny-1600-removebg-preview.png" alt="Ask Dr. Vinny" className="h-16 w-16" />
+                                <img src="https://i.ibb.co/tMYf5Bgt/dv-vinny-1600-removebg-preview.png" alt="Ask Dr. Vinny" className="h-full w-full object-contain" />
                             </button>
-                            <div className="absolute top-1/2 -right-2 transform translate-x-full -translate-y-1/2 w-max bg-gray-900 text-white text-sm rounded-md px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                            <div className="absolute top-1/2 right-full mr-3 w-max bg-gray-900 text-white text-sm rounded-md px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
                                 Ask Dr. Vinny, your AI Sommelier
-                                <div className="absolute top-1/2 -left-1 transform -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
+                                <div className="absolute top-1/2 -right-1 transform -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
                             </div>
                         </div>
                     )}
@@ -1438,27 +1386,14 @@
             );
         };
 
-        // Simplified Video Hero Component without collapse functionality
-        const VideoHero = () => {
+        // Hero Component with GIF background
+        const Hero = () => {
             return (
-                <div className="video-hero">
-                    <div className="video-overlay"></div>
-                    
-                    {/* JW Player iframe */}
-                    <div className="video-wrapper">
-                        <iframe 
-                            src="https://cdn.jwplayer.com/players/zxm5ri2N-O0V5rBgo.html?autostart=true&repeat=true&mute=true&controls=false"
-                            width="100%"
-                            height="100%"
-                            frameBorder="0"
-                            scrolling="no"
-                            title="Wine Spectator Video"
-                            style={{position: 'absolute', top: 0, left: 0, width: '100%', height: '100%'}}
-                            allowFullScreen
-                            allow="autoplay; encrypted-media"
-                        ></iframe>
+                <div className="hero-section">
+                    <div className="hero-background">
+                        <img src="https://i.ibb.co/4q0j4YR/20250630-1638-Elegant-Wine-Pour-simple-compose-01jz190k0qeahvh5hwvrgbmyt4.gif" alt="Elegant wine pour" />
                     </div>
-                    
+                    <div className="hero-overlay"></div>
                     <div className="hero-content">
                         <div className="text-center px-4 max-w-4xl">
                             <>
@@ -1621,7 +1556,7 @@
             return (
                 <div className="min-h-screen">
                     <Navbar scrolled={scrolled} />
-                    <VideoHero />
+                    <Hero />
                     
                     <div id="about" className="parallax-section bg-gray-900 relative">
                         <div className="parallax-bg"></div>
