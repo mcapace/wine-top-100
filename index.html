@@ -424,7 +424,7 @@
         
         /* Navbar glass effect */
         .navbar-glass {
-            background: rgba(10, 10, 10, 0.8);
+            background: rgba(10, 10, 10, 0.95);
             backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(140,0,4,0.2);
         }
@@ -1480,7 +1480,7 @@
 
             return (
                 <>
-                    <nav className={`fixed top-0 left-0 right-0 z-30 transition-all duration-300 ${scrolled ? 'navbar-glass' : ''}`}>
+                    <nav className={`sticky top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'navbar-glass' : ''}`}>
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                             <div className="flex justify-between items-center">
                                 <img src="https://i.ibb.co/27L2JKhF/WSlogo-White.png" alt="Wine Spectator" className="h-8 sm:h-10" />
@@ -1570,7 +1570,6 @@
                     setDb(firestore);
 
                     onAuthStateChanged(auth, async (user) => {
-                        console.log("Auth state changed. User:", user ? user.uid : 'null');
                         if (user) {
                             setUserId(user.uid);
                             const userDocRef = doc(firestore, "users", user.uid);
@@ -1581,7 +1580,7 @@
                                 await setDoc(userDocRef, { tasted: [], wantToTaste: [] });
                                 setTastingData({ tasted: [], wantToTaste: [] });
                             }
-                            setIsAuthReady(true); // Set auth ready flag
+                            setIsAuthReady(true);
                         } else {
                             signInAnonymously(auth).catch((error) => {
                                 console.error("Anonymous sign-in failed:", error);
@@ -1659,60 +1658,62 @@
             }, [filters, sortBy]);
 
             return (
-                <div className="min-h-screen pt-20">
+                <>
                     <Navbar scrolled={scrolled} />
-                    <Hero />
-                    
-                    <div id="about" className="parallax-section bg-gray-900 relative">
-                        <div className="parallax-bg"></div>
-                        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
-                            <div className="glass-card rounded-xl p-6 sm:p-8">
-                                <div className="prose prose-lg max-w-none text-gray-300">
-                                    <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6">About the Top 100</h2>
-                                    <p className="leading-relaxed mb-4">Wine Spectator's Top 100 is our editors' annual selection of the year's most exciting wines. These 100 bottles represent the pinnacle of quality, value, and availability - wines that don't just score high, but deliver exceptional drinking experiences and tell compelling stories.</p>
-                                    <p className="leading-relaxed mb-4">Our expert panel tastes more than 15,000 wines blind each year. From this extensive evaluation, we select these 100 wines that exemplify excellence across all categories - from everyday values to once-in-a-lifetime splurges.</p>
-                                    <p className="leading-relaxed">This year's list celebrates both tradition and innovation, featuring time-honored estates alongside exciting new discoveries. Each wine has earned its place through a combination of outstanding quality, fair pricing relative to its peers, and sufficient production to be found in the market.</p>
+                    <div className="content-wrapper">
+                        <Hero />
+                        
+                        <div id="about" className="parallax-section bg-gray-900 relative">
+                            <div className="parallax-bg"></div>
+                            <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+                                <div className="glass-card rounded-xl p-6 sm:p-8">
+                                    <div className="prose prose-lg max-w-none text-gray-300">
+                                        <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6">About the Top 100</h2>
+                                        <p className="leading-relaxed mb-4">Wine Spectator's Top 100 is our editors' annual selection of the year's most exciting wines. These 100 bottles represent the pinnacle of quality, value, and availability - wines that don't just score high, but deliver exceptional drinking experiences and tell compelling stories.</p>
+                                        <p className="leading-relaxed mb-4">Our expert panel tastes more than 15,000 wines blind each year. From this extensive evaluation, we select these 100 wines that exemplify excellence across all categories - from everyday values to once-in-a-lifetime splurges.</p>
+                                        <p className="leading-relaxed">This year's list celebrates both tradition and innovation, featuring time-honored estates alongside exciting new discoveries. Each wine has earned its place through a combination of outstanding quality, fair pricing relative to its peers, and sufficient production to be found in the market.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <main id="wines" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 space-y-8 sm:space-y-12">
-                        <TastingTracker tastingData={tastingData} userId={userId} />
-                        <AnalyticsDashboard wines={filteredAndSortedWines} />
-                        <WineFilters filters={filters} onFiltersChange={setFilters} sortBy={sortBy} onSortChange={setSortBy} totalWines={wines.length} filteredCount={filteredAndSortedWines.length} isCondensedView={isCondensedView} onViewToggle={setIsCondensedView} />
-                        {isAuthReady ? (
-                            filteredAndSortedWines.length > 0 ? (
-                                <div className={isCondensedView ? "wine-grid-condensed" : "wine-grid"}>
-                                    {filteredAndSortedWines.map((wine, index) => (
-                                        <div key={wine.id} style={{ animationDelay: `${index * 0.05}s` }}>
-                                            {isCondensedView ? (
-                                                <WineCardCondensed wine={wine} onViewDetails={(w) => { setSelectedWine(w); setIsModalOpen(true); }} tastingData={tastingData} onTastingChange={handleTastingChange} />
-                                            ) : (
-                                                <WineCard wine={wine} onViewDetails={(w) => { setSelectedWine(w); setIsModalOpen(true); }} tastingData={tastingData} onTastingChange={handleTastingChange} />
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
+                        
+                        <main id="wines" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 space-y-8 sm:space-y-12">
+                            <TastingTracker tastingData={tastingData} userId={userId} />
+                            <AnalyticsDashboard wines={filteredAndSortedWines} />
+                            <WineFilters filters={filters} onFiltersChange={setFilters} sortBy={sortBy} onSortChange={setSortBy} totalWines={wines.length} filteredCount={filteredAndSortedWines.length} isCondensedView={isCondensedView} onViewToggle={setIsCondensedView} />
+                            {isAuthReady ? (
+                                filteredAndSortedWines.length > 0 ? (
+                                    <div className={isCondensedView ? "wine-grid-condensed" : "wine-grid"}>
+                                        {filteredAndSortedWines.map((wine, index) => (
+                                            <div key={wine.id} style={{ animationDelay: `${index * 0.05}s` }}>
+                                                {isCondensedView ? (
+                                                    <WineCardCondensed wine={wine} onViewDetails={(w) => { setSelectedWine(w); setIsModalOpen(true); }} tastingData={tastingData} onTastingChange={handleTastingChange} />
+                                                ) : (
+                                                    <WineCard wine={wine} onViewDetails={(w) => { setSelectedWine(w); setIsModalOpen(true); }} tastingData={tastingData} onTastingChange={handleTastingChange} />
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-20">
+                                        <h3 className="text-2xl font-semibold text-white mb-2">No wines found</h3>
+                                        <p className="text-gray-400 mb-6">Try adjusting your filters to discover more exceptional wines.</p>
+                                        <button onClick={() => setFilters({ search: '', type: [], country: [], region: [], priceRange: [0, 20000], scoreRange: [0, 100], vintage: [] })} className="bg-gradient-to-r from-red-800 to-red-900 text-white px-6 py-3 rounded-full hover:from-red-900 hover:to-red-800 transition-all duration-300">
+                                            Reset All Filters
+                                        </button>
+                                    </div>
+                                )
                             ) : (
-                                <div className="text-center py-20">
-                                    <h3 className="text-2xl font-semibold text-white mb-2">No wines found</h3>
-                                    <p className="text-gray-400 mb-6">Try adjusting your filters to discover more exceptional wines.</p>
-                                    <button onClick={() => setFilters({ search: '', type: [], country: [], region: [], priceRange: [0, 20000], scoreRange: [0, 100], vintage: [] })} className="bg-gradient-to-r from-red-800 to-red-900 text-white px-6 py-3 rounded-full hover:from-red-900 hover:to-red-800 transition-all duration-300">
-                                        Reset All Filters
-                                    </button>
-                                </div>
-                            )
-                        ) : (
-                             <div className="text-center py-20">
-                                <div className="loading-wine mx-auto"></div>
-                             </div>
-                        )}
-                    </main>
-                    <Footer />
-                    <WineDetailModal wine={selectedWine} isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setSelectedWine(null); }} tastingData={tastingData} onTastingChange={handleTastingChange} />
-                    <AIAssistant wines={wines} />
-                </div>
+                                 <div className="text-center py-20">
+                                    <div className="loading-wine mx-auto"></div>
+                                 </div>
+                            )}
+                        </main>
+                        <Footer />
+                        <WineDetailModal wine={selectedWine} isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setSelectedWine(null); }} tastingData={tastingData} onTastingChange={handleTastingChange} />
+                        <AIAssistant wines={wines} />
+                    </div>
+                </>
             );
         }
 
