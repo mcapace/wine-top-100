@@ -1569,19 +1569,24 @@
                     setDb(firestore);
 
                     onAuthStateChanged(auth, async (user) => {
+                        console.log("Auth state changed. User:", user);
                         if (user) {
                             // User is signed in.
                             setUserId(user.uid);
+                            console.log("User signed in with UID:", user.uid);
                             const userDocRef = doc(firestore, "users", user.uid);
                             const userDoc = await getDoc(userDocRef);
                             if (userDoc.exists()) {
+                                console.log("Found user data:", userDoc.data());
                                 setTastingData(userDoc.data());
                             } else {
-                                // Create a new document for the new user
+                                console.log("No user data found, creating new document.");
                                 await setDoc(userDocRef, { tasted: [], wantToTaste: [] });
+                                setTastingData({ tasted: [], wantToTaste: [] });
                             }
                         } else {
                             // User is signed out.
+                            console.log("No user found. Attempting anonymous sign-in.");
                             signInAnonymously(auth).catch((error) => {
                                 console.error("Anonymous sign-in failed:", error);
                             });
@@ -1602,7 +1607,9 @@
                 // Optimistic UI update
                 const newTastingData = { ...tastingData };
                 if (checked) {
-                    newTastingData[type] = [...newTastingData[type], wineId];
+                    if (!newTastingData[type].includes(wineId)) {
+                        newTastingData[type] = [...newTastingData[type], wineId];
+                    }
                 } else {
                     newTastingData[type] = newTastingData[type].filter(id => id !== wineId);
                 }
