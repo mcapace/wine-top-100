@@ -1548,6 +1548,7 @@
             const [isCondensedView, setIsCondensedView] = useState(false);
             const [userId, setUserId] = useState(null);
             const [db, setDb] = useState(null);
+            const [isAuthReady, setIsAuthReady] = useState(false);
 
             // Initialize Firebase and handle user authentication
             useEffect(() => {
@@ -1569,24 +1570,19 @@
                     setDb(firestore);
 
                     onAuthStateChanged(auth, async (user) => {
-                        console.log("Auth state changed. User:", user);
+                        console.log("Auth state changed. User:", user ? user.uid : 'null');
                         if (user) {
-                            // User is signed in.
                             setUserId(user.uid);
-                            console.log("User signed in with UID:", user.uid);
                             const userDocRef = doc(firestore, "users", user.uid);
                             const userDoc = await getDoc(userDocRef);
                             if (userDoc.exists()) {
-                                console.log("Found user data:", userDoc.data());
                                 setTastingData(userDoc.data());
                             } else {
-                                console.log("No user data found, creating new document.");
                                 await setDoc(userDocRef, { tasted: [], wantToTaste: [] });
                                 setTastingData({ tasted: [], wantToTaste: [] });
                             }
+                            setIsAuthReady(true); // Set auth ready flag
                         } else {
-                            // User is signed out.
-                            console.log("No user found. Attempting anonymous sign-in.");
                             signInAnonymously(auth).catch((error) => {
                                 console.error("Anonymous sign-in failed:", error);
                             });
@@ -1663,7 +1659,7 @@
             }, [filters, sortBy]);
 
             return (
-                <div className="min-h-screen">
+                <div className="min-h-screen pt-20">
                     <Navbar scrolled={scrolled} />
                     <Hero />
                     
@@ -1685,26 +1681,32 @@
                         <TastingTracker tastingData={tastingData} userId={userId} />
                         <AnalyticsDashboard wines={filteredAndSortedWines} />
                         <WineFilters filters={filters} onFiltersChange={setFilters} sortBy={sortBy} onSortChange={setSortBy} totalWines={wines.length} filteredCount={filteredAndSortedWines.length} isCondensedView={isCondensedView} onViewToggle={setIsCondensedView} />
-                        {filteredAndSortedWines.length > 0 ? (
-                            <div className={isCondensedView ? "wine-grid-condensed" : "wine-grid"}>
-                                {filteredAndSortedWines.map((wine, index) => (
-                                    <div key={wine.id} style={{ animationDelay: `${index * 0.05}s` }}>
-                                        {isCondensedView ? (
-                                            <WineCardCondensed wine={wine} onViewDetails={(w) => { setSelectedWine(w); setIsModalOpen(true); }} tastingData={tastingData} onTastingChange={handleTastingChange} />
-                                        ) : (
-                                            <WineCard wine={wine} onViewDetails={(w) => { setSelectedWine(w); setIsModalOpen(true); }} tastingData={tastingData} onTastingChange={handleTastingChange} />
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
+                        {isAuthReady ? (
+                            filteredAndSortedWines.length > 0 ? (
+                                <div className={isCondensedView ? "wine-grid-condensed" : "wine-grid"}>
+                                    {filteredAndSortedWines.map((wine, index) => (
+                                        <div key={wine.id} style={{ animationDelay: `${index * 0.05}s` }}>
+                                            {isCondensedView ? (
+                                                <WineCardCondensed wine={wine} onViewDetails={(w) => { setSelectedWine(w); setIsModalOpen(true); }} tastingData={tastingData} onTastingChange={handleTastingChange} />
+                                            ) : (
+                                                <WineCard wine={wine} onViewDetails={(w) => { setSelectedWine(w); setIsModalOpen(true); }} tastingData={tastingData} onTastingChange={handleTastingChange} />
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-20">
+                                    <h3 className="text-2xl font-semibold text-white mb-2">No wines found</h3>
+                                    <p className="text-gray-400 mb-6">Try adjusting your filters to discover more exceptional wines.</p>
+                                    <button onClick={() => setFilters({ search: '', type: [], country: [], region: [], priceRange: [0, 20000], scoreRange: [0, 100], vintage: [] })} className="bg-gradient-to-r from-red-800 to-red-900 text-white px-6 py-3 rounded-full hover:from-red-900 hover:to-red-800 transition-all duration-300">
+                                        Reset All Filters
+                                    </button>
+                                </div>
+                            )
                         ) : (
-                            <div className="text-center py-20">
-                                <h3 className="text-2xl font-semibold text-white mb-2">No wines found</h3>
-                                <p className="text-gray-400 mb-6">Try adjusting your filters to discover more exceptional wines.</p>
-                                <button onClick={() => setFilters({ search: '', type: [], country: [], region: [], priceRange: [0, 20000], scoreRange: [0, 100], vintage: [] })} className="bg-gradient-to-r from-red-800 to-red-900 text-white px-6 py-3 rounded-full hover:from-red-900 hover:to-red-800 transition-all duration-300">
-                                    Reset All Filters
-                                </button>
-                            </div>
+                             <div className="text-center py-20">
+                                <div className="loading-wine mx-auto"></div>
+                             </div>
                         )}
                     </main>
                     <Footer />
