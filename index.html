@@ -117,6 +117,7 @@
             background-image: url('https://i.ibb.co/4q0j4YR/20250630-1638-Elegant-Wine-Pour-simple-compose-01jz190k0qeahvh5hwvrgbmyt4.gif');
             background-size: cover;
             background-position: center;
+            background-repeat: no-repeat;
         }
         
         /* Mobile hero height */
@@ -681,16 +682,19 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
+                    
+                    const responseData = await apiResponse.json();
 
-                    if (!apiResponse.ok) throw new Error(`API request failed with status ${apiResponse.status}`);
+                    if (!apiResponse.ok) {
+                        console.error("API Error Response:", JSON.stringify(responseData, null, 2));
+                        throw new Error(`API request failed with status ${apiResponse.status}`);
+                    }
 
-                    const result = await apiResponse.json();
-
-                    if (result.candidates && result.candidates[0]?.content?.parts?.[0]) {
-                        const text = result.candidates[0].content.parts[0].text;
+                    if (responseData.candidates && responseData.candidates[0]?.content?.parts?.[0]) {
+                        const text = responseData.candidates[0].content.parts[0].text;
                         setRecommendation(text);
                     } else {
-                        console.error("Unexpected API response structure:", result);
+                        console.error("Unexpected API response structure:", responseData);
                         throw new Error("Invalid response structure from API.");
                     }
 
