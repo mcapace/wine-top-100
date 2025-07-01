@@ -11,7 +11,35 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: Georgia, 'Times New Roman', serif; background-color: #fafafa; }
+        html, body { 
+            margin: 0;
+            padding: 0;
+        }
+        
+        body { 
+            font-family: Georgia, 'Times New Roman', serif; 
+            background-color: #0a0a0a;
+            overflow-x: hidden;
+        }
+        
+        #root {
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        /* Hide JW Player controls globally */
+        .video-wrapper .jw-controls-backdrop,
+        .video-wrapper .jw-controls,
+        .video-wrapper .jw-title,
+        .video-wrapper .jw-logo,
+        .video-wrapper .jw-flag-user-inactive .jw-controls-backdrop,
+        .video-wrapper .jw-controlbar,
+        .video-wrapper .jw-display-icon-container {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+        
         :root {
             --ws-primary: #8c0004;
             --ws-primary-dark: #6b0003;
@@ -20,33 +48,543 @@
             --ws-silver: #c0c0c0;
             --ws-bronze: #cd7f32;
         }
+        
+        /* Smooth scrolling */
+        html { scroll-behavior: smooth; }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #1a1a1a; }
+        ::-webkit-scrollbar-thumb { 
+            background: var(--ws-primary); 
+            border-radius: 5px;
+        }
+        ::-webkit-scrollbar-thumb:hover { background: var(--ws-primary-light); }
+        
         .sans-font { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-        .wine-card { background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: all 0.3s; border: 1px solid #f0f0f0; display: flex; flex-direction: column; }
-        .wine-card:hover { transform: translateY(-4px); box-shadow: 0 8px 16px rgba(140,0,4,0.1); border-color: var(--ws-primary-light); }
-        .header-bg { background: #8c0004; }
-        .rank-gold { background: linear-gradient(135deg, #d4af37 0%, #f4e4bc 50%, #d4af37 100%); }
-        .rank-silver { background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 50%, #c0c0c0 100%); }
-        .rank-bronze { background: linear-gradient(135deg, #cd7f32 0%, #e8c4a0 50%, #cd7f32 100%); }
+        
+        /* Glassmorphism effects */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(140, 0, 4, 0.2);
+            position: relative;
+        }
+        
+        /* Fixed height wine cards */
+        .wine-card { 
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            height: 100%;
+            min-height: 480px;
+            z-index: 1;
+        }
+        
+        /* Mobile wine card height */
+        @media (max-width: 640px) {
+            .wine-card {
+                min-height: 420px;
+            }
+        }
+        
+        .wine-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(140, 0, 4, 0.05), transparent);
+            transition: left 0.5s;
+        }
+        
+        .wine-card:hover::before {
+            left: 100%;
+        }
+        
+        .wine-card:hover { 
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(140,0,4,0.2);
+            border-color: var(--ws-primary-light);
+        }
+        
+        /* Main app container */
+        .min-h-screen {
+            position: relative;
+            min-height: 100vh;
+        }
+        
+        /* Video hero section */
+        .video-hero {
+            position: relative;
+            height: 80vh;
+            overflow: hidden;
+            background: #000;
+            margin: 0;
+            padding: 0;
+            top: 0;
+        }
+        
+        /* Mobile hero height */
+        @media (max-width: 768px) {
+            .video-hero {
+                height: 60vh;
+            }
+        }
+        
+        .video-bg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            transform: translate(-50%, -50%);
+            object-fit: cover;
+        }
+        
+        /* JW Player specific styles to hide controls and ensure autoplay */
+        .video-bg .jwplayer {
+            position: absolute !important;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        
+        .video-bg .jw-controls,
+        .video-bg .jw-title,
+        .video-bg .jw-logo {
+            display: none !important;
+        }
+        
+        .video-bg .jw-media {
+            cursor: default !important;
+        }
+        
+        .video-bg .jw-state-idle .jw-icon-display,
+        .video-bg .jw-state-paused .jw-icon-display,
+        .video-bg .jw-state-buffering .jw-icon-display {
+            display: none !important;
+        }
+        
+        .video-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        .video-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, 
+                rgba(0,0,0,0.4) 0%, 
+                rgba(140,0,4,0.3) 50%, 
+                rgba(0,0,0,0.8) 100%);
+            z-index: 2;
+        }
+        
+        /* Hero content positioning */
+        .hero-content {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3;
+            text-align: center;
+            color: white;
+            padding: 1rem;
+            pointer-events: none;
+        }
+        
+        .hero-content a,
+        .hero-content button {
+            pointer-events: all;
+        }
+
+        /* Video fallback - hidden by default */
+        .video-fallback {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a0a0a 0%, #8c0004 100%);
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Animated background */
+        .animated-bg {
+            background: linear-gradient(45deg, #0a0a0a 0%, #1a0a0a 50%, #0a0a0a 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* CRITICAL: Fixed dropdown z-index and positioning */
+        .dropdown-wrapper {
+            position: relative;
+            z-index: 50 !important;
+        }
+        
+        .dropdown-content {
+            max-height: 240px;
+            overflow-y: auto;
+            z-index: 50 !important;
+            position: absolute;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            margin-top: 4px;
+            width: 100%;
+        }
+        
+        /* Mobile dropdown adjustments */
+        @media (max-width: 640px) {
+            .dropdown-content {
+                max-height: 200px;
+            }
+        }
+        
+        /* Ensure filter section has proper z-index */
+        .filter-section {
+            position: relative;
+            z-index: 100;
+        }
+        
+        /* AI Assistant z-index */
+        .ai-assistant-container {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            z-index: 30;
+        }
+        
+        /* Rank badges with glow */
+        .rank-gold { 
+            background: linear-gradient(135deg, #d4af37 0%, #f4e4bc 50%, #d4af37 100%);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+            animation: goldPulse 2s infinite;
+        }
+        
+        @keyframes goldPulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(212, 175, 55, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(212, 175, 55, 0.8); }
+        }
+        
+        .rank-silver { 
+            background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 50%, #c0c0c0 100%);
+            box-shadow: 0 0 15px rgba(192, 192, 192, 0.5);
+        }
+        
+        .rank-bronze { 
+            background: linear-gradient(135deg, #cd7f32 0%, #e8c4a0 50%, #cd7f32 100%);
+            box-shadow: 0 0 15px rgba(205, 127, 50, 0.5);
+        }
+        
+        /* Wine glass with liquid animation */
         .wine-glass-placeholder { 
-            background: #2a2a2a; 
+            background: linear-gradient(180deg, #1a1a1a 0%, #2a1a1a 100%);
             position: relative; 
             overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
+            height: 200px;
         }
-        .wine-card-content { flex: 1; display: flex; flex-direction: column; }
-        .wine-card-details { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-        .modal-backdrop { background-color: rgba(0, 0, 0, 0.9); backdrop-filter: blur(4px); }
-        .animate-fade-in { animation: fadeIn 0.6s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .dropdown-content { max-height: 240px; overflow-y: auto; }
-        .ai-assistant { background: linear-gradient(135deg, #8c0004 0%, #a51e22 100%); }
-        .footer-bg { background: #1a1a1a; }
+        
+        .wine-glass-placeholder::after {
+            content: '';
+            position: absolute;
+            bottom: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(140,0,4,0.1) 0%, transparent 70%);
+            animation: swirl 20s linear infinite;
+        }
+        
+        @keyframes swirl {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .wine-card-content { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .wine-card-details { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between;
+            padding: 1.25rem;
+        }
+        
+        /* Modern modal */
+        .modal-backdrop { 
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+        
+        /* Mobile modal adjustments */
+        @media (max-width: 768px) {
+            .modal-content {
+                margin: 0;
+                max-height: 100vh;
+                border-radius: 0;
+            }
+            
+            .modal-image-container {
+                height: 200px !important;
+            }
+        }
+        
+        /* Smooth animations */
+        .animate-fade-in { 
+            animation: fadeInUp 0.6s ease-out forwards;
+            opacity: 0;
+        }
+        
+        @keyframes fadeInUp { 
+            from { 
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Loading animation */
+        .loading-wine {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(140,0,4,0.1);
+            border-radius: 50%;
+            border-top-color: var(--ws-primary);
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Floating animation for AI assistant */
+        .ai-assistant { 
+            background: linear-gradient(135deg, #8c0004 0%, #d4af37 100%);
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        /* Mobile AI assistant positioning */
+        @media (max-width: 640px) {
+            .ai-chat-window {
+                width: calc(100vw - 2rem) !important;
+                max-width: 400px;
+                right: 1rem !important;
+                bottom: 5rem !important;
+            }
+        }
+        
+        /* Modern footer */
+        .footer-bg { 
+            background: linear-gradient(180deg, #0a0a0a 0%, #1a0a0a 100%);
+            border-top: 1px solid rgba(140,0,4,0.3);
+        }
+        
+        /* Parallax section */
+        .parallax-section {
+            position: relative;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .parallax-bg {
+            position: absolute;
+            inset: -20%;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:rgb(140,0,4);stop-opacity:0.1" /><stop offset="100%" style="stop-color:rgb(212,175,55);stop-opacity:0.1" /></linearGradient></defs><rect width="1200" height="800" fill="url(%23grad)" /><circle cx="100" cy="100" r="80" fill="rgba(140,0,4,0.05)" /><circle cx="1100" cy="700" r="120" fill="rgba(212,175,55,0.05)" /></svg>') center/cover;
+            filter: blur(3px);
+            transform: translateZ(-1px) scale(1.5);
+        }
+        
+        /* Pulse animation for buttons */
+        .pulse-button {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .pulse-button::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.5);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .pulse-button:active::after {
+            width: 300px;
+            height: 300px;
+        }
+        
+        /* Text glow effect */
+        .glow-text {
+            text-shadow: 0 0 20px rgba(212,175,55,0.5);
+        }
+        
+        /* Premium texture overlay */
+        .texture-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.03;
+            background-image: 
+                repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(255,255,255,.1) 35px, rgba(255,255,255,.1) 70px),
+                repeating-linear-gradient(-45deg, transparent, transparent 35px, rgba(0,0,0,.03) 35px, rgba(0,0,0,.03) 70px);
+            z-index: 0;
+        }
+        
+        /* Navbar glass effect */
+        .navbar-glass {
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(140,0,4,0.2);
+        }
+        
+        /* Main content z-index fix */
+        main {
+            position: relative;
+            z-index: 10;
+        }
+        
+        /* Wine grid container */
+        .wine-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            align-items: stretch;
+            margin-top: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Condensed wine grid */
+        .wine-grid-condensed {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+            margin-top: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        @media (min-width: 1024px) {
+            .wine-grid-condensed {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+        }
+
+        /* Wine card z-index */
+        .wine-card {
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Mobile grid adjustments */
+        @media (max-width: 640px) {
+            .wine-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
+        
+        .wine-grid > * {
+            height: 100%;
+        }
+        
+        /* Mobile navigation */
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 80%;
+            max-width: 300px;
+            height: 100vh;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(20px);
+            transition: right 0.3s ease;
+            z-index: 50;
+            padding: 2rem;
+        }
+        
+        .mobile-menu.open {
+            right: 0;
+        }
+        
+        .mobile-menu-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 49;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .mobile-menu-overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        /* Touch-friendly buttons */
+        @media (max-width: 768px) {
+            button, a {
+                min-height: 44px;
+                min-width: 44px;
+            }
+        }
     </style>
 </head>
-<body>
+<body class="animated-bg">
+    <!-- Texture overlay -->
+    <div class="texture-overlay"></div>
+    
     <div id="root"></div>
+    
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
 
@@ -65,6 +603,7 @@
             {id: 12, rank: 12, name: "Bollinger La Grande Année 2012", winery: "Bollinger", varietal: "Champagne Blend", vintage: 2012, region: "Champagne", country: "France", type: "Sparkling", score: 95, price: 200, servingTemp: "6-8°C", description: "Exceptional vintage Champagne showing incredible depth.", tastingNotes: "Brioche, honey, citrus, and toasted almonds.", alcoholContent: 12.0, decantTime: "No decanting needed", drinkWindow: "2023-2035", production: 30000, blend: "65% Pinot Noir, 35% Chardonnay", editorNote: "2012 was a legendary vintage in Champagne."}
         ];
 
+        // Icon components remain the same
         const X = ({ className = "h-6 w-6" }) => (
             <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -97,9 +636,9 @@
         );
 
         const WineGlass = ({ className = "h-16 w-16" }) => (
-            <svg className={className} viewBox="0 0 24 24" fill="black">
-                <path d="M8 2h8l1.5 9c0 2.5-2 4.5-4.5 4.5S8.5 13.5 8.5 11L8 2zM12 16v6m-3 0h6" stroke="black" strokeWidth="1.5" fill="none"/>
-                <ellipse cx="12" cy="8" rx="3.5" ry="2" fill="black" opacity="0.3"/>
+            <svg className={className} viewBox="0 0 24 24" fill="white">
+                <path d="M8 2h8l1.5 9c0 2.5-2 4.5-4.5 4.5S8.5 13.5 8.5 11L8 2zM12 16v6m-3 0h6" stroke="white" strokeWidth="1.5" fill="none"/>
+                <ellipse cx="12" cy="8" rx="3.5" ry="2" fill="white" opacity="0.3"/>
             </svg>
         );
 
@@ -108,6 +647,42 @@
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 <circle cx="9" cy="9" r="1" fill="currentColor"/>
                 <circle cx="15" cy="9" r="1" fill="currentColor"/>
+            </svg>
+        );
+
+        const Star = ({ className = "h-5 w-5" }) => (
+            <svg className={className} fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+            </svg>
+        );
+
+        const Menu = ({ className = "h-6 w-6" }) => (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        );
+
+        const Grid = ({ className = "h-6 w-6" }) => (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+        );
+
+        const List = ({ className = "h-6 w-6" }) => (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        );
+
+        const ChevronUp = ({ className = "h-6 w-6" }) => (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+            </svg>
+        );
+
+        const ChevronDown = ({ className = "h-6 w-6" }) => (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
         );
 
@@ -122,6 +697,7 @@
             return stored ? JSON.parse(stored) : { tasted: [], wantToTaste: [] };
         };
 
+        // Fixed dropdown with proper z-index and positioning
         const MultiSelect = ({ options, selected, onChange, placeholder }) => {
             const [isOpen, setIsOpen] = useState(false);
             const dropdownRef = useRef(null);
@@ -137,8 +713,8 @@
             }, []);
 
             return (
-                <div className="relative" ref={dropdownRef}>
-                    <button type="button" onClick={() => setIsOpen(!isOpen)} className="w-full px-3 py-2 text-left border rounded focus:outline-none sans-font text-sm">
+                <div className="dropdown-wrapper" ref={dropdownRef}>
+                    <button type="button" onClick={() => setIsOpen(!isOpen)} className="w-full px-3 py-2 text-left border rounded-lg focus:outline-none sans-font text-sm hover:border-red-800 transition-colors bg-white">
                         <div className="flex items-center justify-between">
                             <span className="text-gray-700">{selected.length > 0 ? `${selected.length} selected` : placeholder}</span>
                             <svg className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -147,16 +723,16 @@
                         </div>
                     </button>
                     {isOpen && (
-                        <div className="absolute z-20 w-full mt-1 bg-white border rounded shadow-lg dropdown-content">
+                        <div className="dropdown-content">
                             {options.map(option => (
-                                <label key={option} className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer sans-font text-sm">
+                                <label key={option} className="flex items-center px-3 py-2 hover:bg-red-50 cursor-pointer sans-font text-sm transition-colors">
                                     <input type="checkbox" checked={selected.includes(option)} onChange={() => {
                                         if (selected.includes(option)) {
                                             onChange(selected.filter(item => item !== option));
                                         } else {
                                             onChange([...selected, option]);
                                         }
-                                    }} className="mr-2" />
+                                    }} className="mr-2 accent-red-800" />
                                     <span className="text-gray-700">{option}</span>
                                 </label>
                             ))}
@@ -166,6 +742,7 @@
             );
         };
 
+        // Enhanced AI Assistant
         const AIAssistant = ({ wines }) => {
             const [isOpen, setIsOpen] = useState(false);
             const [query, setQuery] = useState('');
@@ -177,8 +754,6 @@
                 
                 setIsLoading(true);
                 try {
-                    // This is a mock-up. In a real application, you would make an API call to a backend service.
-                    // For demonstration, we'll simulate a delay and provide a static response.
                     await new Promise(resolve => setTimeout(resolve, 1500));
                     
                     const response = `Based on your request for "${query}", you might enjoy the Tenuta San Guido Sassicaia 2019. It's a fantastic Red from Italy, priced at $450, and pairs wonderfully with steak. Another great option could be the Opus One 2019, a classic from Napa Valley.`;
@@ -190,30 +765,30 @@
             };
 
             return (
-                <div className="fixed bottom-4 right-4 z-40">
+                <div className="ai-assistant-container">
                     {!isOpen && (
                         <button
                             onClick={() => setIsOpen(true)}
-                            className="ai-assistant p-4 rounded-full shadow-lg text-white hover:scale-105 transition-transform"
+                            className="ai-assistant p-4 rounded-full shadow-2xl text-white hover:scale-110 transition-all duration-300"
                         >
                             <Bot className="h-8 w-8" />
                         </button>
                     )}
                     
                     {isOpen && (
-                        <div className="bg-white rounded-lg shadow-2xl w-96 animate-fade-in">
-                            <div className="ai-assistant p-4 rounded-t-lg flex justify-between items-center">
+                        <div className="ai-chat-window glass-card rounded-2xl shadow-2xl w-96 animate-fade-in">
+                            <div className="bg-gradient-to-r from-red-900 to-red-800 p-4 rounded-t-2xl flex justify-between items-center">
                                 <h3 className="text-white font-bold flex items-center gap-2">
                                     <Bot className="h-6 w-6" />
-                                    Wine Spectator AI Assistant
+                                    Wine Spectator AI Sommelier
                                 </h3>
-                                <button onClick={() => setIsOpen(false)} className="text-white hover:text-gray-200">
+                                <button onClick={() => setIsOpen(false)} className="text-white hover:text-gray-200 transition-colors">
                                     <X className="h-5 w-5" />
                                 </button>
                             </div>
                             
                             <div className="p-4">
-                                <p className="text-sm text-gray-600 mb-4">
+                                <p className="text-sm text-gray-300 mb-4">
                                     Ask me for wine recommendations based on your preferences, food pairings, or occasions!
                                 </p>
                                 
@@ -222,21 +797,26 @@
                                         value={query}
                                         onChange={(e) => setQuery(e.target.value)}
                                         placeholder="E.g., 'I need a red wine under $500 for a steak dinner' or 'What's a good wine for celebrating?'"
-                                        className="w-full p-3 border rounded-lg resize-none sans-font text-sm"
+                                        className="w-full p-3 bg-gray-800 text-white border border-gray-700 rounded-lg resize-none sans-font text-sm focus:border-red-800 focus:outline-none transition-colors"
                                         rows="3"
                                     />
                                     
                                     <button
                                         onClick={getRecommendation}
                                         disabled={isLoading || !query.trim()}
-                                        className="w-full bg-red-800 text-white py-2 rounded hover:bg-red-900 disabled:bg-gray-400 sans-font"
+                                        className="w-full bg-gradient-to-r from-red-800 to-red-900 text-white py-3 rounded-lg hover:from-red-900 hover:to-red-800 disabled:from-gray-600 disabled:to-gray-700 sans-font transition-all duration-300 pulse-button"
                                     >
-                                        {isLoading ? 'Getting recommendation...' : 'Get Recommendation'}
+                                        {isLoading ? (
+                                            <span className="flex items-center justify-center gap-2">
+                                                <div className="loading-wine w-4 h-4"></div>
+                                                Getting recommendation...
+                                            </span>
+                                        ) : 'Get Recommendation'}
                                     </button>
                                     
                                     {recommendation && (
-                                        <div className="p-4 bg-gray-50 rounded-lg">
-                                            <p className="text-sm text-gray-700">{recommendation}</p>
+                                        <div className="p-4 bg-gray-800 rounded-lg">
+                                            <p className="text-sm text-gray-200">{recommendation}</p>
                                         </div>
                                     )}
                                 </div>
@@ -247,58 +827,60 @@
             );
         };
 
+        // Enhanced Wine Card with fixed height
         const WineCard = ({ wine, onViewDetails, tastingData, onTastingChange }) => {
             const getRankBadgeClass = (rank) => {
                 if (rank === 1) return 'rank-gold';
                 if (rank === 2) return 'rank-silver';
                 if (rank === 3) return 'rank-bronze';
-                return 'bg-red-800';
+                return 'bg-gradient-to-r from-red-800 to-red-900';
             };
 
             return (
-                <div className="wine-card rounded overflow-hidden animate-fade-in">
+                <div className="wine-card rounded-xl overflow-hidden animate-fade-in">
                     <div className="wine-card-content cursor-pointer" onClick={() => onViewDetails(wine)}>
-                        <div className="relative overflow-hidden">
-                            <WineGlassPlaceholder className="w-full h-48" />
-                            <div className={`absolute top-3 left-3 ${getRankBadgeClass(wine.rank)} text-white px-3 py-1 rounded text-sm font-bold shadow-lg`}>
+                        <div className="relative overflow-hidden flex-shrink-0">
+                            <WineGlassPlaceholder className="w-full" />
+                            <div className={`absolute top-3 left-3 ${getRankBadgeClass(wine.rank)} text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg`}>
                                 #{wine.rank}
                             </div>
-                            <div className="absolute top-3 right-3 bg-white text-red-800 px-3 py-1 rounded text-sm font-bold shadow-lg">
+                            <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm text-red-800 px-3 py-1 rounded-full text-sm font-bold shadow-lg flex items-center gap-1">
+                                <Star className="h-4 w-4 text-yellow-500" />
                                 {wine.score}
                             </div>
                         </div>
-                        <div className="p-5 wine-card-details">
-                            <div>
+                        <div className="wine-card-details">
+                            <div className="mb-4">
                                 <h3 className="font-bold text-lg mb-1 text-gray-900">{wine.name}</h3>
-                                <p className="text-sm text-gray-600 mb-3">{wine.winery}</p>
+                                <p className="text-sm text-gray-600">{wine.winery}</p>
                             </div>
-                            <div className="space-y-2">
+                            <div className="space-y-2 flex-1">
                                 <div className="text-sm text-gray-500">{wine.vintage} • {wine.varietal}</div>
                                 <div className="text-sm text-gray-500">{wine.region}, {wine.country}</div>
                                 <div className="flex items-center gap-2 text-sm text-gray-500">
                                     <Thermometer className="h-4 w-4 text-red-800" />
                                     <span>Serve at {wine.servingTemp}</span>
                                 </div>
-                                <div className="flex justify-between items-center pt-3 border-t">
-                                    <span className="text-lg font-bold text-red-800">${wine.price}</span>
-                                    <span className="text-sm text-gray-500">{wine.type}</span>
-                                </div>
+                            </div>
+                            <div className="flex justify-between items-center pt-3 mt-3 border-t">
+                                <span className="text-lg font-bold text-red-800">${wine.price}</span>
+                                <span className="text-sm text-gray-500 px-2 py-1 bg-gray-100 rounded-full">{wine.type}</span>
                             </div>
                         </div>
                     </div>
-                    <div className="px-5 pb-5 space-y-2 border-t pt-3">
-                        <label className="flex items-center gap-2 cursor-pointer sans-font text-sm">
+                    <div className="px-5 pb-5 pt-3 space-y-2 border-t bg-gray-50">
+                        <label className="flex items-center gap-2 cursor-pointer sans-font text-sm hover:text-red-800 transition-colors">
                             <input type="checkbox" checked={tastingData.tasted.includes(wine.id)} onChange={(e) => {
                                 e.stopPropagation();
                                 onTastingChange(wine.id, 'tasted', e.target.checked);
-                            }} className="custom-checkbox" />
+                            }} className="accent-red-800" />
                             <span className="text-gray-700">I have tasted this wine</span>
                         </label>
-                        <label className="flex items-center gap-2 cursor-pointer sans-font text-sm">
+                        <label className="flex items-center gap-2 cursor-pointer sans-font text-sm hover:text-red-800 transition-colors">
                             <input type="checkbox" checked={tastingData.wantToTaste.includes(wine.id)} onChange={(e) => {
                                 e.stopPropagation();
                                 onTastingChange(wine.id, 'wantToTaste', e.target.checked);
-                            }} className="custom-checkbox" />
+                            }} className="accent-red-800" />
                             <span className="text-gray-700">I want to taste this wine</span>
                         </label>
                     </div>
@@ -306,7 +888,63 @@
             );
         };
 
-        const WineFilters = ({ filters, onFiltersChange, sortBy, onSortChange, totalWines, filteredCount }) => {
+        // Condensed Wine Card Component
+        const WineCardCondensed = ({ wine, onViewDetails, tastingData, onTastingChange }) => {
+            const getRankBadgeClass = (rank) => {
+                if (rank === 1) return 'rank-gold';
+                if (rank === 2) return 'rank-silver';
+                if (rank === 3) return 'rank-bronze';
+                return 'bg-gradient-to-r from-red-800 to-red-900';
+            };
+
+            return (
+                <div className="bg-white rounded-lg shadow-lg p-4 hover:shadow-xl transition-all duration-300 cursor-pointer animate-fade-in" onClick={() => onViewDetails(wine)}>
+                    <div className="flex items-center gap-4">
+                        <div className={`${getRankBadgeClass(wine.rank)} text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg min-w-[60px] text-center`}>
+                            #{wine.rank}
+                        </div>
+                        <div className="flex-1">
+                            <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1">
+                                    <h3 className="font-bold text-base text-gray-900 line-clamp-1">{wine.name}</h3>
+                                    <p className="text-sm text-gray-600 line-clamp-1">{wine.winery} • {wine.vintage}</p>
+                                    <div className="flex items-center gap-3 mt-1">
+                                        <span className="text-xs text-gray-500">{wine.region}, {wine.country}</span>
+                                        <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-full">{wine.type}</span>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="flex items-center gap-1 bg-white/90 text-red-800 px-2 py-1 rounded-full text-sm font-bold shadow">
+                                        <Star className="h-3 w-3 text-yellow-500" />
+                                        {wine.score}
+                                    </div>
+                                    <div className="text-lg font-bold text-red-800 mt-1">${wine.price}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex gap-2 mt-3 pt-3 border-t" onClick={(e) => e.stopPropagation()}>
+                        <label className="flex items-center gap-1 cursor-pointer sans-font text-xs text-gray-600 hover:text-red-800 transition-colors">
+                            <input type="checkbox" checked={tastingData.tasted.includes(wine.id)} onChange={(e) => {
+                                e.stopPropagation();
+                                onTastingChange(wine.id, 'tasted', e.target.checked);
+                            }} className="accent-red-800 w-3 h-3" />
+                            <span>Tasted</span>
+                        </label>
+                        <label className="flex items-center gap-1 cursor-pointer sans-font text-xs text-gray-600 hover:text-red-800 transition-colors">
+                            <input type="checkbox" checked={tastingData.wantToTaste.includes(wine.id)} onChange={(e) => {
+                                e.stopPropagation();
+                                onTastingChange(wine.id, 'wantToTaste', e.target.checked);
+                            }} className="accent-red-800 w-3 h-3" />
+                            <span>Want to taste</span>
+                        </label>
+                    </div>
+                </div>
+            );
+        };
+
+        // Enhanced Filters with proper z-index
+        const WineFilters = ({ filters, onFiltersChange, sortBy, onSortChange, totalWines, filteredCount, isCondensedView, onViewToggle }) => {
             const uniqueCountries = [...new Set(wines.map(w => w.country))].sort();
             const uniqueTypes = [...new Set(wines.map(w => w.type))].sort();
             const uniqueVintages = [...new Set(wines.map(w => w.vintage.toString()))].sort().reverse();
@@ -317,27 +955,37 @@
             if (filters.vintage.length > 0) activeFilters.push(...filters.vintage.map(v => ({ type: 'vintage', value: v })));
 
             return (
-                <div className="bg-white rounded shadow-sm p-6 animate-fade-in">
-                    <div className="flex justify-between items-center mb-6">
+                <div className="glass-card rounded-xl p-4 sm:p-6 animate-fade-in filter-section">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                         <div className="flex items-center gap-3">
-                            <Filter className="h-5 w-5 text-red-800" />
-                            <h2 className="text-2xl font-bold text-gray-900">Explore the Top 100</h2>
+                            <Filter className="h-5 w-5 text-red-400" />
+                            <h2 className="text-xl sm:text-2xl font-bold text-white">Explore the Top 100</h2>
                         </div>
-                        <div className="text-sm text-gray-600 sans-font">
-                            Showing <span className="font-bold text-red-800">{filteredCount}</span> of {totalWines} wines
+                        <div className="flex items-center gap-4">
+                            <div className="text-sm text-gray-400 sans-font">
+                                Showing <span className="font-bold text-red-400">{filteredCount}</span> of {totalWines} wines
+                            </div>
+                            <div className="flex items-center gap-2 bg-gray-800/50 backdrop-blur-sm rounded-lg p-1">
+                                <button onClick={() => onViewToggle(false)} className={`p-2 rounded transition-colors ${!isCondensedView ? 'bg-red-800 text-white' : 'text-gray-400 hover:text-white'}`} title="Grid View">
+                                    <Grid className="h-4 w-4" />
+                                </button>
+                                <button onClick={() => onViewToggle(true)} className={`p-2 rounded transition-colors ${isCondensedView ? 'bg-red-800 text-white' : 'text-gray-400 hover:text-white'}`} title="List View">
+                                    <List className="h-4 w-4" />
+                                </button>
+                            </div>
                         </div>
                     </div>
                     {activeFilters.length > 0 && (
                         <div className="mb-4 flex flex-wrap gap-2">
                             {activeFilters.map((filter, index) => (
-                                <div key={`${filter.type}-${filter.value}-${index}`} className="bg-gray-100 px-3 py-1 rounded text-sm flex items-center gap-2 sans-font">
-                                    <span className="text-gray-700">{filter.value}</span>
+                                <div key={`${filter.type}-${filter.value}-${index}`} className="bg-red-900/30 backdrop-blur-sm px-3 py-1 rounded-full text-sm flex items-center gap-2 sans-font">
+                                    <span className="text-gray-200">{filter.value}</span>
                                     <button onClick={(e) => {
                                         e.stopPropagation();
                                         const newFilters = { ...filters };
                                         newFilters[filter.type] = newFilters[filter.type].filter(v => v !== filter.value);
                                         onFiltersChange(newFilters);
-                                    }} className="hover:text-red-800">
+                                    }} className="hover:text-red-400 text-gray-300 transition-colors">
                                         <X className="h-3 w-3" />
                                     </button>
                                 </div>
@@ -350,7 +998,7 @@
                                 priceRange: [0, 20000],
                                 scoreRange: [0, 100],
                                 vintage: []
-                            })} className="text-sm text-gray-500 hover:text-gray-700 sans-font">
+                            })} className="text-sm text-gray-400 hover:text-gray-200 sans-font transition-colors">
                                 Clear all
                             </button>
                         </div>
@@ -358,25 +1006,25 @@
                     <div className="mb-6">
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                            <input type="text" placeholder="Search wines, wineries, regions, varietals..." className="w-full pl-10 pr-4 py-3 border rounded focus:outline-none sans-font" value={filters.search} onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })} />
+                            <input type="text" placeholder="Search wines, wineries, regions, varietals..." className="w-full pl-10 pr-4 py-3 bg-gray-800/50 backdrop-blur-sm text-white border border-gray-700 rounded-lg focus:outline-none focus:border-red-800 sans-font transition-colors" value={filters.search} onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })} />
                         </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2 sans-font">Wine Type</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="relative">
+                            <label className="block text-sm font-medium text-gray-300 mb-2 sans-font">Wine Type</label>
                             <MultiSelect options={uniqueTypes} selected={filters.type} onChange={(value) => onFiltersChange({ ...filters, type: value })} placeholder="All Types" />
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2 sans-font">Country</label>
+                        <div className="relative">
+                            <label className="block text-sm font-medium text-gray-300 mb-2 sans-font">Country</label>
                             <MultiSelect options={uniqueCountries} selected={filters.country} onChange={(value) => onFiltersChange({ ...filters, country: value })} placeholder="All Countries" />
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2 sans-font">Vintage</label>
+                        <div className="relative">
+                            <label className="block text-sm font-medium text-gray-300 mb-2 sans-font">Vintage</label>
                             <MultiSelect options={uniqueVintages} selected={filters.vintage} onChange={(value) => onFiltersChange({ ...filters, vintage: value })} placeholder="All Vintages" />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2 sans-font">Sort By</label>
-                            <select className="w-full px-3 py-2 border rounded focus:outline-none sans-font text-sm" value={sortBy} onChange={(e) => onSortChange(e.target.value)}>
+                            <label className="block text-sm font-medium text-gray-300 mb-2 sans-font">Sort By</label>
+                            <select className="w-full px-3 py-2 bg-white border rounded-lg focus:outline-none focus:border-red-800 sans-font text-sm transition-colors" value={sortBy} onChange={(e) => onSortChange(e.target.value)}>
                                 <option value="rank">Rank</option>
                                 <option value="score-desc">Score (High to Low)</option>
                                 <option value="score-asc">Score (Low to High)</option>
@@ -392,92 +1040,123 @@
             );
         };
 
+        // Enhanced Modal - Fixed z-index and backdrop issues
         const WineDetailModal = ({ wine, isOpen, onClose, tastingData, onTastingChange }) => {
             const [activeTab, setActiveTab] = useState('overview');
-            if (!wine || !isOpen) return null;
+            
+            // Lock body scroll when modal is open
+            useEffect(() => {
+                if (isOpen) {
+                    document.body.style.overflow = 'hidden';
+                    
+                    // ESC key handler
+                    const handleEsc = (e) => {
+                        if (e.key === 'Escape') {
+                            onClose();
+                        }
+                    };
+                    document.addEventListener('keydown', handleEsc);
+                    
+                    return () => {
+                        document.body.style.overflow = 'unset';
+                        document.removeEventListener('keydown', handleEsc);
+                    };
+                } else {
+                    document.body.style.overflow = 'unset';
+                }
+            }, [isOpen, onClose]);
+            
+            if (!isOpen || !wine) return null;
 
             const getRankBadgeClass = (rank) => {
                 if (rank === 1) return 'rank-gold';
                 if (rank === 2) return 'rank-silver';
                 if (rank === 3) return 'rank-bronze';
-                return 'bg-red-800';
+                return 'bg-gradient-to-r from-red-800 to-red-900';
             };
 
             return (
-                <div className="fixed inset-0 z-50 overflow-y-auto">
-                    <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center">
-                        <div className="modal-backdrop fixed inset-0 transition-opacity" onClick={onClose}></div>
-                        <div className="relative inline-block w-full max-w-4xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded">
-                            <div className="relative h-80 overflow-hidden">
+                <div className="fixed inset-0 z-[100] overflow-y-auto">
+                    {/* Backdrop */}
+                    <div className="modal-backdrop fixed inset-0 z-[100]" onClick={onClose}></div>
+                    
+                    {/* Modal Container */}
+                    <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center relative z-[101]">
+                        {/* Modal Content */}
+                        <div className="modal-content relative inline-block w-full max-w-4xl my-8 overflow-hidden text-left align-middle transition-all transform bg-gray-900 shadow-2xl rounded-2xl md:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal-image-container relative h-64 sm:h-80 overflow-hidden">
                                 <WineGlassPlaceholder className="w-full h-full" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-                                <button onClick={onClose} className="absolute top-4 right-4 p-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg hover:bg-white/30">
+                                <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent" />
+                                <button onClick={onClose} className="absolute top-4 right-4 p-2 bg-white/10 backdrop-blur-sm rounded-full shadow-lg hover:bg-white/20 transition-colors z-10">
                                     <X className="h-6 w-6 text-white" />
                                 </button>
                                 <div className="absolute bottom-6 left-6 right-6">
-                                    <div className="flex items-end justify-between">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
                                         <div>
                                             <div className="flex items-center gap-3 mb-2">
-                                                <div className={`${getRankBadgeClass(wine.rank)} text-white px-4 py-2 rounded text-lg font-bold`}>#{wine.rank}</div>
-                                                <div className="bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded text-lg font-bold">{wine.score} pts</div>
+                                                <div className={`${getRankBadgeClass(wine.rank)} text-white px-4 py-2 rounded-full text-lg font-bold`}>#{wine.rank}</div>
+                                                <div className="bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-full text-lg font-bold flex items-center gap-1">
+                                                    <Star className="h-5 w-5 text-yellow-400" />
+                                                    {wine.score} pts
+                                                </div>
                                             </div>
-                                            <h2 className="text-3xl font-bold text-white mb-1">{wine.name}</h2>
-                                            <p className="text-xl text-white/90">{wine.winery}</p>
+                                            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-1">{wine.name}</h2>
+                                            <p className="text-lg sm:text-xl text-white/90">{wine.winery}</p>
                                         </div>
-                                        <div className="text-right">
-                                            <div className="text-4xl font-bold text-white">${wine.price}</div>
+                                        <div className="text-left sm:text-right">
+                                            <div className="text-3xl sm:text-4xl font-bold text-white glow-text">${wine.price}</div>
                                             <div className="text-white/80">per bottle</div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div className="px-6 py-4 bg-gray-50 border-b space-y-2">
-                                <label className="flex items-center gap-2 cursor-pointer sans-font text-sm">
-                                    <input type="checkbox" checked={tastingData.tasted.includes(wine.id)} onChange={(e) => onTastingChange(wine.id, 'tasted', e.target.checked)} />
-                                    <span className="text-gray-700">I have tasted this wine</span>
+                            <div className="px-4 sm:px-6 py-4 bg-gray-800 border-b border-gray-700 space-y-2">
+                                <label className="flex items-center gap-2 cursor-pointer sans-font text-sm text-gray-300 hover:text-white transition-colors">
+                                    <input type="checkbox" checked={tastingData.tasted.includes(wine.id)} onChange={(e) => onTastingChange(wine.id, 'tasted', e.target.checked)} className="accent-red-800" />
+                                    <span>I have tasted this wine</span>
                                 </label>
-                                <label className="flex items-center gap-2 cursor-pointer sans-font text-sm">
-                                    <input type="checkbox" checked={tastingData.wantToTaste.includes(wine.id)} onChange={(e) => onTastingChange(wine.id, 'wantToTaste', e.target.checked)} />
-                                    <span className="text-gray-700">I want to taste this wine</span>
+                                <label className="flex items-center gap-2 cursor-pointer sans-font text-sm text-gray-300 hover:text-white transition-colors">
+                                    <input type="checkbox" checked={tastingData.wantToTaste.includes(wine.id)} onChange={(e) => onTastingChange(wine.id, 'wantToTaste', e.target.checked)} className="accent-red-800" />
+                                    <span>I want to taste this wine</span>
                                 </label>
                             </div>
-                            <div className="border-b">
-                                <div className="flex">
+                            <div className="border-b border-gray-700">
+                                <div className="flex overflow-x-auto">
                                     {['overview', 'details', 'editor note'].map((tab) => (
-                                        <button key={tab} onClick={() => setActiveTab(tab)} className={`px-6 py-3 font-medium capitalize sans-font ${activeTab === tab ? 'text-red-800 border-b-2 border-red-800' : 'text-gray-600 hover:text-gray-900'}`}>
+                                        <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 sm:px-6 py-3 font-medium capitalize sans-font transition-colors whitespace-nowrap ${activeTab === tab ? 'text-red-400 border-b-2 border-red-400' : 'text-gray-400 hover:text-gray-200'}`}>
                                             {tab}
                                         </button>
                                     ))}
                                 </div>
                             </div>
-                            <div className="p-6">
+                            <div className="p-4 sm:p-6 text-gray-300 max-h-[400px] overflow-y-auto">
                                 {activeTab === 'overview' && (
                                     <div className="space-y-6 animate-fade-in">
                                         <div>
-                                            <h3 className="text-lg font-bold text-gray-900 mb-2">Description</h3>
-                                            <p className="text-gray-700 leading-relaxed">{wine.description}</p>
+                                            <h3 className="text-lg font-bold text-white mb-2">Description</h3>
+                                            <p className="leading-relaxed">{wine.description}</p>
                                         </div>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                            <div className="bg-gray-50 rounded p-4">
-                                                <div className="text-sm text-gray-500 mb-1 sans-font">Vintage</div>
-                                                <div className="font-bold text-gray-900">{wine.vintage}</div>
+                                            <div className="glass-card rounded-lg p-4">
+                                                <div className="text-sm text-gray-400 mb-1 sans-font">Vintage</div>
+                                                <div className="font-bold text-white">{wine.vintage}</div>
                                             </div>
-                                            <div className="bg-gray-50 rounded p-4">
-                                                <div className="text-sm text-gray-500 mb-1 sans-font">Type</div>
-                                                <div className="font-bold text-gray-900">{wine.type}</div>
+                                            <div className="glass-card rounded-lg p-4">
+                                                <div className="text-sm text-gray-400 mb-1 sans-font">Type</div>
+                                                <div className="font-bold text-white">{wine.type}</div>
                                             </div>
-                                            <div className="bg-gray-50 rounded p-4">
-                                                <div className="text-sm text-gray-500 mb-1 sans-font">Region</div>
-                                                <div className="font-bold text-gray-900">{wine.region}</div>
+                                            <div className="glass-card rounded-lg p-4">
+                                                <div className="text-sm text-gray-400 mb-1 sans-font">Region</div>
+                                                <div className="font-bold text-white">{wine.region}</div>
                                             </div>
-                                            <div className="bg-gray-50 rounded p-4">
-                                                <div className="text-sm text-gray-500 mb-1 sans-font">Country</div>
-                                                <div className="font-bold text-gray-900">{wine.country}</div>
+                                            <div className="glass-card rounded-lg p-4">
+                                                <div className="text-sm text-gray-400 mb-1 sans-font">Country</div>
+                                                <div className="font-bold text-white">{wine.country}</div>
                                             </div>
                                         </div>
                                         <div>
-                                            <h3 className="text-lg font-bold text-gray-900 mb-2">Tasting Notes</h3>
-                                            <p className="text-gray-700 leading-relaxed">{wine.tastingNotes}</p>
+                                            <h3 className="text-lg font-bold text-white mb-2">Tasting Notes</h3>
+                                            <p className="leading-relaxed">{wine.tastingNotes}</p>
                                         </div>
                                     </div>
                                 )}
@@ -485,43 +1164,43 @@
                                     <div className="space-y-6 animate-fade-in">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
-                                                <h4 className="font-semibold text-gray-900 mb-3">Wine Details</h4>
+                                                <h4 className="font-semibold text-white mb-3">Wine Details</h4>
                                                 <dl className="space-y-2">
-                                                    <div className="flex justify-between py-2 border-b">
-                                                        <dt className="text-gray-600">Varietal</dt>
-                                                        <dd className="font-medium text-gray-900">{wine.varietal}</dd>
+                                                    <div className="flex justify-between py-2 border-b border-gray-700">
+                                                        <dt className="text-gray-400">Varietal</dt>
+                                                        <dd className="font-medium text-white">{wine.varietal}</dd>
                                                     </div>
-                                                    <div className="flex justify-between py-2 border-b">
-                                                        <dt className="text-gray-600">Alcohol Content</dt>
-                                                        <dd className="font-medium text-gray-900">{wine.alcoholContent}%</dd>
+                                                    <div className="flex justify-between py-2 border-b border-gray-700">
+                                                        <dt className="text-gray-400">Alcohol Content</dt>
+                                                        <dd className="font-medium text-white">{wine.alcoholContent}%</dd>
                                                     </div>
-                                                    <div className="flex justify-between py-2 border-b">
-                                                        <dt className="text-gray-600">Production</dt>
-                                                        <dd className="font-medium text-gray-900">{wine.production.toLocaleString()} cases</dd>
+                                                    <div className="flex justify-between py-2 border-b border-gray-700">
+                                                        <dt className="text-gray-400">Production</dt>
+                                                        <dd className="font-medium text-white">{wine.production.toLocaleString()} cases</dd>
                                                     </div>
-                                                    <div className="flex justify-between py-2 border-b">
-                                                        <dt className="text-gray-600">Drink Window</dt>
-                                                        <dd className="font-medium text-gray-900">{wine.drinkWindow}</dd>
+                                                    <div className="flex justify-between py-2 border-b border-gray-700">
+                                                        <dt className="text-gray-400">Drink Window</dt>
+                                                        <dd className="font-medium text-white">{wine.drinkWindow}</dd>
                                                     </div>
                                                 </dl>
                                             </div>
                                             <div>
-                                                <h4 className="font-semibold text-gray-900 mb-3">Serving Suggestions</h4>
+                                                <h4 className="font-semibold text-white mb-3">Serving Suggestions</h4>
                                                 <dl className="space-y-2">
-                                                    <div className="flex justify-between py-2 border-b">
-                                                        <dt className="text-gray-600 flex items-center gap-2">
-                                                            <Thermometer className="h-4 w-4 text-red-800" />
+                                                    <div className="flex justify-between py-2 border-b border-gray-700">
+                                                        <dt className="text-gray-400 flex items-center gap-2">
+                                                            <Thermometer className="h-4 w-4 text-red-400" />
                                                             Serving Temp
                                                         </dt>
-                                                        <dd className="font-medium text-gray-900">{wine.servingTemp}</dd>
+                                                        <dd className="font-medium text-white">{wine.servingTemp}</dd>
                                                     </div>
-                                                    <div className="flex justify-between py-2 border-b">
-                                                        <dt className="text-gray-600">Decanting</dt>
-                                                        <dd className="font-medium text-gray-900">{wine.decantTime}</dd>
+                                                    <div className="flex justify-between py-2 border-b border-gray-700">
+                                                        <dt className="text-gray-400">Decanting</dt>
+                                                        <dd className="font-medium text-white">{wine.decantTime}</dd>
                                                     </div>
-                                                    <div className="py-2 border-b">
-                                                        <dt className="text-gray-600 mb-1">Blend Composition</dt>
-                                                        <dd className="font-medium text-gray-900 text-sm">{wine.blend}</dd>
+                                                    <div className="py-2 border-b border-gray-700">
+                                                        <dt className="text-gray-400 mb-1">Blend Composition</dt>
+                                                        <dd className="font-medium text-white text-sm">{wine.blend}</dd>
                                                     </div>
                                                 </dl>
                                             </div>
@@ -530,17 +1209,17 @@
                                 )}
                                 {activeTab === 'editor note' && (
                                     <div className="space-y-6 animate-fade-in">
-                                        <div className="bg-red-50 rounded p-6">
-                                            <h4 className="font-semibold text-gray-900 mb-3">Wine Spectator Editor's Note</h4>
-                                            <p className="text-gray-700 leading-relaxed italic">"{wine.editorNote}"</p>
-                                            <div className="mt-4 text-sm text-gray-600 sans-font">
+                                        <div className="glass-card rounded-lg p-4 sm:p-6">
+                                            <h4 className="font-semibold text-white mb-3">Wine Spectator Editor's Note</h4>
+                                            <p className="leading-relaxed italic text-gray-300">"{wine.editorNote}"</p>
+                                            <div className="mt-4 text-sm text-gray-400 sans-font">
                                                 <p className="mb-2"><strong>Wine Spectator Score:</strong> {wine.score}/100</p>
                                                 <p><strong>Value Rating:</strong> {wine.price < 100 ? 'Outstanding' : wine.price < 500 ? 'Excellent' : 'Collectible'}</p>
                                             </div>
                                         </div>
-                                        <div className="bg-gray-50 rounded p-6">
-                                            <h4 className="font-semibold text-gray-900 mb-3">Food Pairing Suggestions</h4>
-                                            <p className="text-gray-700">
+                                        <div className="glass-card rounded-lg p-4 sm:p-6">
+                                            <h4 className="font-semibold text-white mb-3">Food Pairing Suggestions</h4>
+                                            <p className="text-gray-300">
                                                 {wine.type === 'Red' && 'Perfect with grilled meats, aged cheeses, and hearty stews.'}
                                                 {wine.type === 'White' && 'Excellent with seafood, poultry, and light pasta dishes.'}
                                                 {wine.type === 'Sparkling' && 'Ideal as an aperitif or with oysters, caviar, and celebrations.'}
@@ -555,6 +1234,7 @@
             );
         };
 
+        // Enhanced Analytics Dashboard
         const AnalyticsDashboard = ({ wines }) => {
             const chartRef = useRef(null);
             const chartInstance = useRef(null);
@@ -577,7 +1257,8 @@
                             datasets: [{
                                 data: Object.values(countryData),
                                 backgroundColor: ['#8c0004', '#a51e22', '#d4af37', '#cd7f32', '#c0c0c0', '#444444'],
-                                borderWidth: 0
+                                borderWidth: 2,
+                                borderColor: '#0a0a0a'
                             }]
                         },
                         options: {
@@ -586,7 +1267,11 @@
                             plugins: {
                                 legend: {
                                     position: 'right',
-                                    labels: { padding: 15, font: { size: 12, family: 'Georgia, Times New Roman, serif' } }
+                                    labels: { 
+                                        padding: 15, 
+                                        font: { size: 12, family: 'Georgia, Times New Roman, serif' },
+                                        color: '#ffffff'
+                                    }
                                 }
                             }
                         }
@@ -614,37 +1299,37 @@
             const sortedVintages = Object.entries(vintageRankings).sort(([a], [b]) => b - a).slice(0, 5).map(([vintage, count]) => ({ vintage, count }));
 
             return (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-4">
-                    <div className="bg-white rounded shadow-sm p-6 animate-fade-in">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Countries Represented</h3>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
+                    <div className="glass-card rounded-xl p-4 sm:p-6 animate-fade-in">
+                        <h3 className="text-lg font-semibold text-white mb-4">Countries Represented</h3>
                         <div style={{ height: '250px' }}>
                             <canvas ref={chartRef}></canvas>
                         </div>
                     </div>
-                    <div className="bg-white rounded shadow-sm p-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Wine Types in Top 100</h3>
+                    <div className="glass-card rounded-xl p-4 sm:p-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+                        <h3 className="text-lg font-semibold text-white mb-4">Wine Types in Top 100</h3>
                         <div className="space-y-2">
                             {sortedTypes.map(({ type, count }, index) => (
-                                <div key={type} className="flex items-center justify-between p-3 rounded bg-gray-50">
+                                <div key={type} className="flex items-center justify-between p-3 rounded-lg bg-gray-800/50 backdrop-blur-sm hover:bg-gray-800/70 transition-colors">
                                     <div className="flex items-center gap-3">
-                                        <span className="text-2xl font-bold text-red-800">#{index + 1}</span>
-                                        <span className="font-medium">{type}</span>
+                                        <span className="text-2xl font-bold text-red-400">#{index + 1}</span>
+                                        <span className="font-medium text-white">{type}</span>
                                     </div>
-                                    <span className="text-sm text-gray-600 sans-font">{count} wines</span>
+                                    <span className="text-sm text-gray-400 sans-font">{count} wines</span>
                                 </div>
                             ))}
                         </div>
                     </div>
-                    <div className="bg-white rounded shadow-sm p-6 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Vintages</h3>
+                    <div className="glass-card rounded-xl p-4 sm:p-6 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                        <h3 className="text-lg font-semibold text-white mb-4">Top Vintages</h3>
                         <div className="space-y-2">
                             {sortedVintages.map(({ vintage, count }, index) => (
-                                <div key={vintage} className="flex items-center justify-between p-3 rounded bg-gray-50">
+                                <div key={vintage} className="flex items-center justify-between p-3 rounded-lg bg-gray-800/50 backdrop-blur-sm hover:bg-gray-800/70 transition-colors">
                                     <div className="flex items-center gap-3">
-                                        <span className="text-2xl font-bold text-red-800">#{index + 1}</span>
-                                        <span className="font-medium">{vintage}</span>
+                                        <span className="text-2xl font-bold text-red-400">#{index + 1}</span>
+                                        <span className="font-medium text-white">{vintage}</span>
                                     </div>
-                                    <span className="text-sm text-gray-600 sans-font">{count} wines</span>
+                                    <span className="text-sm text-gray-400 sans-font">{count} wines</span>
                                 </div>
                             ))}
                         </div>
@@ -653,26 +1338,31 @@
             );
         };
 
+        // Enhanced Tasting Tracker
         const TastingTracker = ({ tastingData }) => {
             return (
-                <div className="bg-white rounded shadow-sm p-6 text-center">
-                    <h3 className="text-xl font-bold text-gray-900 mb-4">
-                        Have you tried any of these wines? Which would you like to drink?
+                <div className="glass-card rounded-xl p-6 sm:p-8 text-center mb-8">
+                    <h3 className="text-xl sm:text-2xl font-bold text-white mb-4">
+                        Your Wine Journey
                     </h3>
-                    <p className="text-gray-600 mb-4">Track your Top 100 tasting record below.</p>
-                    <div className="flex justify-center gap-8 text-lg">
-                        <span className="text-blue-700">
-                            I have tasted: <strong>{tastingData.tasted.length}</strong>
-                        </span>
-                        <span className="text-gray-500">—</span>
-                        <span className="text-blue-700">
-                            I want to taste: <strong>{tastingData.wantToTaste.length}</strong>
-                        </span>
+                    <p className="text-gray-300 mb-6">Track your progress through the Top 100</p>
+                    <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-8 text-lg">
+                        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-3 rounded-full">
+                            <span className="text-white">
+                                Tasted: <strong className="text-2xl">{tastingData.tasted.length}</strong>
+                            </span>
+                        </div>
+                        <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-3 rounded-full">
+                            <span className="text-white">
+                                Wishlist: <strong className="text-2xl">{tastingData.wantToTaste.length}</strong>
+                            </span>
+                        </div>
                     </div>
                 </div>
             );
         };
 
+        // Enhanced Footer
         const Footer = () => {
             return (
                 <footer className="footer-bg text-white mt-20">
@@ -687,38 +1377,38 @@
                             <div>
                                 <h4 className="font-bold mb-4">Quick Links</h4>
                                 <ul className="space-y-2 text-sm text-gray-400">
-                                    <li><a href="#" className="hover:text-white">Wine Ratings</a></li>
-                                    <li><a href="#" className="hover:text-white">Wine Education</a></li>
-                                    <li><a href="#" className="hover:text-white">Events</a></li>
-                                    <li><a href="#" className="hover:text-white">Subscribe</a></li>
+                                    <li><a href="#" className="hover:text-red-400 transition-colors">Wine Ratings</a></li>
+                                    <li><a href="#" className="hover:text-red-400 transition-colors">Wine Education</a></li>
+                                    <li><a href="#" className="hover:text-red-400 transition-colors">Events</a></li>
+                                    <li><a href="#" className="hover:text-red-400 transition-colors">Subscribe</a></li>
                                 </ul>
                             </div>
                             <div>
                                 <h4 className="font-bold mb-4">Resources</h4>
                                 <ul className="space-y-2 text-sm text-gray-400">
-                                    <li><a href="#" className="hover:text-white">Vintage Charts</a></li>
-                                    <li><a href="#" className="hover:text-white">Wine Basics</a></li>
-                                    <li><a href="#" className="hover:text-white">Restaurant Awards</a></li>
-                                    <li><a href="#" className="hover:text-white">Wine Travel</a></li>
+                                    <li><a href="#" className="hover:text-red-400 transition-colors">Vintage Charts</a></li>
+                                    <li><a href="#" className="hover:text-red-400 transition-colors">Wine Basics</a></li>
+                                    <li><a href="#" className="hover:text-red-400 transition-colors">Restaurant Awards</a></li>
+                                    <li><a href="#" className="hover:text-red-400 transition-colors">Wine Travel</a></li>
                                 </ul>
                             </div>
                             <div>
                                 <h4 className="font-bold mb-4">Connect</h4>
                                 <p className="text-sm text-gray-400 mb-4">
-                                    Join our community of wine enthusiasts worldwide.
+                                    Join our community of wine aficionados worldwide.
                                 </p>
                                 <div className="flex gap-4">
-                                    <a href="#" className="text-gray-400 hover:text-white">
+                                    <a href="#" className="text-gray-400 hover:text-red-400 transition-colors">
                                         <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
                                             <path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"/>
                                         </svg>
                                     </a>
-                                    <a href="#" className="text-gray-400 hover:text-white">
+                                    <a href="#" className="text-gray-400 hover:text-red-400 transition-colors">
                                         <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
                                             <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
                                         </svg>
                                     </a>
-                                    <a href="#" className="text-gray-400 hover:text-white">
+                                    <a href="#" className="text-gray-400 hover:text-red-400 transition-colors">
                                         <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
                                             <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073z"/>
                                             <path d="M12 5.838c-3.403 0-6.162 2.759-6.162 6.162 0 3.403 2.759 6.163 6.162 6.163 3.403 0 6.162-2.76 6.162-6.163 0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4z"/>
@@ -729,13 +1419,121 @@
                             </div>
                         </div>
                         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
-                            <p>&copy; 2024 Wine Spectator. All rights reserved. | <a href="#" className="hover:text-white">Privacy Policy</a> | <a href="#" className="hover:text-white">Terms of Service</a></p>
+                            <p>&copy; 2024 Wine Spectator. All rights reserved. | <a href="#" className="hover:text-red-400 transition-colors">Privacy Policy</a> | <a href="#" className="hover:text-red-400 transition-colors">Terms of Service</a></p>
                         </div>
                     </div>
                 </footer>
             );
         };
 
+        // Simplified Video Hero Component without collapse functionality
+        const VideoHero = () => {
+            return (
+                <div className="video-hero">
+                    <div className="video-overlay"></div>
+                    
+                    {/* JW Player iframe */}
+                    <div className="video-wrapper">
+                        <iframe 
+                            src="https://cdn.jwplayer.com/players/zxm5ri2N-O0V5rBgo.html?autostart=true&repeat=true&mute=true&controls=false"
+                            width="100%"
+                            height="100%"
+                            frameBorder="0"
+                            scrolling="no"
+                            title="Wine Spectator Video"
+                            style={{position: 'absolute', top: 0, left: 0, width: '100%', height: '100%'}}
+                            allowFullScreen
+                            allow="autoplay; encrypted-media"
+                        ></iframe>
+                    </div>
+                    
+                    <div className="hero-content">
+                        <div className="text-center px-4 max-w-4xl">
+                            <>
+                                <div className="mb-8 animate-fade-in">
+                                    <img src="https://i.ibb.co/27L2JKhF/WSlogo-White.png" alt="Wine Spectator" className="h-16 sm:h-20 mx-auto mb-8" />
+                                </div>
+                                <h1 className="text-4xl sm:text-6xl md:text-7xl font-bold text-white mb-4 animate-fade-in glow-text" style={{ animationDelay: '0.2s' }}>
+                                    Top 100 Wines
+                                </h1>
+                                <p className="text-xl sm:text-2xl md:text-3xl text-gray-200 mb-8 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+                                    2024 Edition
+                                </p>
+                                <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-12 animate-fade-in" style={{ animationDelay: '0.6s' }}>
+                                    Our editors' selection of the year's most exciting wines from around the world
+                                </p>
+                                <a href="#wines" className="inline-block bg-gradient-to-r from-red-800 to-red-900 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-full font-semibold text-base sm:text-lg hover:from-red-900 hover:to-red-800 transition-all duration-300 animate-fade-in pulse-button" style={{ animationDelay: '0.8s' }}>
+                                    Explore the Collection
+                                </a>
+                            </>
+                        </div>
+                    </div>
+                    
+                    <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+                        <svg className="w-6 h-6 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                        </svg>
+                    </div>
+                </div>
+            );
+        };
+
+        // Enhanced Navbar Component with mobile menu
+        const Navbar = ({ scrolled }) => {
+            const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+            return (
+                <>
+                    <nav className={`fixed top-0 left-0 right-0 z-30 transition-all duration-300 ${scrolled ? 'navbar-glass' : ''}`}>
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                            <div className="flex justify-between items-center">
+                                <img src="https://i.ibb.co/27L2JKhF/WSlogo-White.png" alt="Wine Spectator" className="h-8 sm:h-10" />
+                                
+                                {/* Desktop Menu */}
+                                <div className="hidden md:flex items-center gap-8">
+                                    <a href="#wines" className="text-white hover:text-red-400 transition-colors">Wines</a>
+                                    <a href="#about" className="text-white hover:text-red-400 transition-colors">About</a>
+                                    <a href="#contact" className="text-white hover:text-red-400 transition-colors">Contact</a>
+                                    <button className="bg-red-800 text-white px-4 py-2 rounded-full hover:bg-red-900 transition-colors">
+                                        Subscribe
+                                    </button>
+                                </div>
+                                
+                                {/* Mobile Menu Button */}
+                                <button onClick={() => setMobileMenuOpen(true)} className="md:hidden text-white hover:text-red-400 transition-colors">
+                                    <Menu className="h-6 w-6" />
+                                </button>
+                            </div>
+                        </div>
+                    </nav>
+                    
+                    {/* Mobile Menu Overlay */}
+                    <div className={`mobile-menu-overlay md:hidden ${mobileMenuOpen ? 'open' : ''}`} onClick={() => setMobileMenuOpen(false)}></div>
+                    
+                    {/* Mobile Menu */}
+                    <div className={`mobile-menu md:hidden ${mobileMenuOpen ? 'open' : ''}`}>
+                        <button onClick={() => setMobileMenuOpen(false)} className="absolute top-4 right-4 text-white hover:text-red-400 transition-colors">
+                            <X className="h-6 w-6" />
+                        </button>
+                        
+                        <div className="pt-16">
+                            <img src="https://i.ibb.co/27L2JKhF/WSlogo-White.png" alt="Wine Spectator" className="h-12 mb-8" />
+                            
+                            <nav className="space-y-4">
+                                <a href="#wines" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-red-400 transition-colors text-lg py-2">Wines</a>
+                                <a href="#about" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-red-400 transition-colors text-lg py-2">About</a>
+                                <a href="#contact" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-red-400 transition-colors text-lg py-2">Contact</a>
+                                <button className="bg-red-800 text-white px-6 py-3 rounded-full hover:bg-red-900 transition-colors w-full mt-6">
+                                    Subscribe
+                                </button>
+                            </nav>
+                        </div>
+                    </div>
+                </>
+            );
+        };
+
+        // Main HomePage Component
         function HomePage() {
             const [filters, setFilters] = useState({
                 search: '',
@@ -750,6 +1548,16 @@
             const [selectedWine, setSelectedWine] = useState(null);
             const [isModalOpen, setIsModalOpen] = useState(false);
             const [tastingData, setTastingData] = useState(initializeTastingData());
+            const [scrolled, setScrolled] = useState(false);
+            const [isCondensedView, setIsCondensedView] = useState(false);
+
+            useEffect(() => {
+                const handleScroll = () => {
+                    setScrolled(window.scrollY > 100);
+                };
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
 
             const filteredAndSortedWines = useMemo(() => {
                 const filtered = wines.filter(wine => {
@@ -799,42 +1607,45 @@
             };
 
             return (
-                <div className="min-h-screen" style={{ backgroundColor: '#fafafa' }}>
-                    <header className="header-bg text-white shadow-lg">
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                            <div className="text-center">
-                                <div className="mb-6">
-                                     <a href="https://ibb.co/hRn5089g"><img src="https://i.ibb.co/27L2JKhF/WSlogo-White.png" alt="WSlogo-White" border="0" className="h-16 mx-auto" /></a>
+                <div className="min-h-screen">
+                    <Navbar scrolled={scrolled} />
+                    <VideoHero />
+                    
+                    <div id="about" className="parallax-section bg-gray-900 relative">
+                        <div className="parallax-bg"></div>
+                        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+                            <div className="glass-card rounded-xl p-6 sm:p-8">
+                                <div className="prose prose-lg max-w-none text-gray-300">
+                                    <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6">About the Top 100</h2>
+                                    <p className="leading-relaxed mb-4">Wine Spectator's Top 100 is our editors' annual selection of the year's most exciting wines. These 100 bottles represent the pinnacle of quality, value, and availability - wines that don't just score high, but deliver exceptional drinking experiences and tell compelling stories.</p>
+                                    <p className="leading-relaxed mb-4">Our expert panel tastes more than 15,000 wines blind each year. From this extensive evaluation, we select these 100 wines that exemplify excellence across all categories - from everyday values to once-in-a-lifetime splurges.</p>
+                                    <p className="leading-relaxed">This year's list celebrates both tradition and innovation, featuring time-honored estates alongside exciting new discoveries. Each wine has earned its place through a combination of outstanding quality, fair pricing relative to its peers, and sufficient production to be found in the market.</p>
                                 </div>
-                                <h1 className="text-4xl font-bold text-white tracking-tight mb-2">Top 100 Wines of 2024</h1>
-                                <p className="text-lg text-gray-200 max-w-3xl mx-auto">Our editors' selection of the year's most exciting wines from around the world</p>
-                            </div>
-                        </div>
-                    </header>
-                    <div className="bg-white mx-4 sm:mx-6 lg:mx-auto max-w-6xl -mt-8 rounded shadow-lg mb-12 relative z-10">
-                        <div className="p-8">
-                            <div className="prose prose-lg max-w-none">
-                                <p className="text-gray-700 leading-relaxed mb-4">Wine Spectator's Top 100 is our editors' annual selection of the year's most exciting wines. These 100 bottles represent the pinnacle of quality, value, and availability - wines that don't just score high, but deliver exceptional drinking experiences and tell compelling stories.</p>
-                                <p className="text-gray-700 leading-relaxed mb-4">Our expert panel tastes more than 15,000 wines blind each year. From this extensive evaluation, we select these 100 wines that exemplify excellence across all categories - from everyday values to once-in-a-lifetime splurges.</p>
-                                <p className="text-gray-700 leading-relaxed">This year's list celebrates both tradition and innovation, featuring time-honored estates alongside exciting new discoveries. Each wine has earned its place through a combination of outstanding quality, fair pricing relative to its peers, and sufficient production to be found in the market.</p>
                             </div>
                         </div>
                     </div>
-                    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 space-y-12">
+                    
+                    <main id="wines" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 space-y-8 sm:space-y-12">
                         <TastingTracker tastingData={tastingData} />
                         <AnalyticsDashboard wines={filteredAndSortedWines} />
-                        <WineFilters filters={filters} onFiltersChange={setFilters} sortBy={sortBy} onSortChange={setSortBy} totalWines={wines.length} filteredCount={filteredAndSortedWines.length} />
+                        <WineFilters filters={filters} onFiltersChange={setFilters} sortBy={sortBy} onSortChange={setSortBy} totalWines={wines.length} filteredCount={filteredAndSortedWines.length} isCondensedView={isCondensedView} onViewToggle={setIsCondensedView} />
                         {filteredAndSortedWines.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                {filteredAndSortedWines.map((wine) => (
-                                    <WineCard key={wine.id} wine={wine} onViewDetails={(w) => { setSelectedWine(w); setIsModalOpen(true); }} tastingData={tastingData} onTastingChange={handleTastingChange} />
+                            <div className={isCondensedView ? "wine-grid-condensed" : "wine-grid"}>
+                                {filteredAndSortedWines.map((wine, index) => (
+                                    <div key={wine.id} style={{ animationDelay: `${index * 0.05}s` }}>
+                                        {isCondensedView ? (
+                                            <WineCardCondensed wine={wine} onViewDetails={(w) => { setSelectedWine(w); setIsModalOpen(true); }} tastingData={tastingData} onTastingChange={handleTastingChange} />
+                                        ) : (
+                                            <WineCard wine={wine} onViewDetails={(w) => { setSelectedWine(w); setIsModalOpen(true); }} tastingData={tastingData} onTastingChange={handleTastingChange} />
+                                        )}
+                                    </div>
                                 ))}
                             </div>
                         ) : (
                             <div className="text-center py-20">
-                                <h3 className="text-2xl font-semibold text-gray-900 mb-2">No wines found</h3>
-                                <p className="text-gray-600 mb-6">Try adjusting your filters to discover more exceptional wines.</p>
-                                <button onClick={() => setFilters({ search: '', type: [], country: [], region: [], priceRange: [0, 20000], scoreRange: [0, 100], vintage: [] })} className="bg-red-800 text-white px-6 py-2 rounded hover:bg-red-900">
+                                <h3 className="text-2xl font-semibold text-white mb-2">No wines found</h3>
+                                <p className="text-gray-400 mb-6">Try adjusting your filters to discover more exceptional wines.</p>
+                                <button onClick={() => setFilters({ search: '', type: [], country: [], region: [], priceRange: [0, 20000], scoreRange: [0, 100], vintage: [] })} className="bg-gradient-to-r from-red-800 to-red-900 text-white px-6 py-3 rounded-full hover:from-red-900 hover:to-red-800 transition-all duration-300">
                                     Reset All Filters
                                 </button>
                             </div>
