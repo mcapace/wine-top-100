@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/wine-top-100/static/css/main.04bcbb41.css",
-    "main.js": "/wine-top-100/static/js/main.598ac99e.js",
+    "main.css": "/wine-top-100/static/css/main.3464cb4b.css",
+    "main.js": "/wine-top-100/static/js/main.a2e8ffc4.js",
     "static/js/453.012d3826.chunk.js": "/wine-top-100/static/js/453.012d3826.chunk.js",
     "index.html": "/wine-top-100/index.html",
-    "main.04bcbb41.css.map": "/wine-top-100/static/css/main.04bcbb41.css.map",
-    "main.598ac99e.js.map": "/wine-top-100/static/js/main.598ac99e.js.map",
+    "main.3464cb4b.css.map": "/wine-top-100/static/css/main.3464cb4b.css.map",
+    "main.a2e8ffc4.js.map": "/wine-top-100/static/js/main.a2e8ffc4.js.map",
     "453.012d3826.chunk.js.map": "/wine-top-100/static/js/453.012d3826.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.04bcbb41.css",
-    "static/js/main.598ac99e.js"
+    "static/css/main.3464cb4b.css",
+    "static/js/main.a2e8ffc4.js"
   ]
 }
