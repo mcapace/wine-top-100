@@ -10,34 +10,30 @@ const LazyImage = ({ src, alt, className, placeholderSrc = '/placeholder-wine.jp
     const imageRef = useRef(null);
 
     useEffect(() => {
-        let observer;
-        const currentElement = imageRef.current; // Store ref value
-        
-        if (currentElement) {
-            observer = new IntersectionObserver(
-                entries => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            const img = new Image();
-                            img.src = src;
-                            img.onload = () => {
-                                setImageSrc(src);
-                                setImageLoading(false);
-                            };
-                            observer.unobserve(entry.target);
-                        }
-                    });
-                },
-                { threshold: 0.1, rootMargin: '50px' }
-            );
+        const imageElement = imageRef.current;
+        if (!imageElement) return;
 
-            observer.observe(currentElement);
-        }
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = new Image();
+                        img.src = src;
+                        img.onload = () => {
+                            setImageSrc(src);
+                            setImageLoading(false);
+                        };
+                        observer.disconnect();
+                    }
+                });
+            },
+            { threshold: 0.1, rootMargin: '50px' }
+        );
+
+        observer.observe(imageElement);
 
         return () => {
-            if (observer) {
-                observer.disconnect(); // Use disconnect instead
-            }
+            observer.disconnect();
         };
     }, [src, placeholderSrc]);
 
