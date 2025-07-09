@@ -7,39 +7,18 @@ import winesData from './wines-2024.json';
 const LazyImage = ({ src, alt, className, placeholderSrc = '/placeholder-wine.jpg' }) => {
     const [imageSrc, setImageSrc] = useState(placeholderSrc);
     const [imageLoading, setImageLoading] = useState(true);
-    const imageRef = useRef(null);
 
     useEffect(() => {
-        let observer;
-        const element = imageRef.current;
-
-        if (element) {
-            observer = new IntersectionObserver(
-                (entries) => {
-                    if (entries[0].isIntersecting) {
-                        const img = new Image();
-                        img.src = src;
-                        img.onload = () => {
-                            setImageSrc(src);
-                            setImageLoading(false);
-                        };
-                    }
-                },
-                { threshold: 0.1, rootMargin: '50px' }
-            );
-
-            observer.observe(element);
-        }
-
-        return () => {
-            if (observer) {
-                observer.disconnect();
-            }
+        const img = new Image();
+        img.src = src;
+        img.onload = () => {
+            setImageSrc(src);
+            setImageLoading(false);
         };
     }, [src]);
 
     return (
-        <div ref={imageRef} className={className} style={{ position: 'relative' }}>
+        <div className={className} style={{ position: 'relative' }}>
             {imageLoading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
                     <div className="spinner"></div>
@@ -53,6 +32,7 @@ const LazyImage = ({ src, alt, className, placeholderSrc = '/placeholder-wine.jp
         </div>
     );
 };
+
 // Analytics functions
 const trackEvent = (eventName, parameters = {}) => {
     if (typeof window !== 'undefined' && window.gtag) {
