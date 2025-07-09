@@ -194,10 +194,11 @@ body {
 
 .hero-title {
   font-size: 3rem;
-  font-weight: bold;
+  font-weight: 700;
   color: white;
   margin-bottom: 1rem;
   text-shadow: 0 3px 15px rgba(0,0,0,0.5);
+  letter-spacing: -0.02em;
 }
 
 .hero-title-line {
@@ -353,9 +354,10 @@ body {
 
 .section-header h2 {
   font-size: 2.25rem;
-  font-weight: bold;
+  font-weight: 700;
   color: #1a202c;
   margin-bottom: 1rem;
+  letter-spacing: -0.02em;
 }
 
 @media (min-width: 768px) {
@@ -708,13 +710,14 @@ body {
 }
 
 .wine-content h3 {
-  font-size: 1.25rem;
-  font-weight: bold;
+  font-size: 1.125rem;
+  font-weight: 600;
   color: #1a202c;
   margin-bottom: 0.25rem;
   min-height: 60px;
   cursor: pointer;
   transition: color 0.3s ease;
+  line-height: 1.4;
 }
 
 .wine-content h3:hover {
@@ -722,20 +725,26 @@ body {
 }
 
 .wine-winery {
-  color: #a0aec0;
-  min-height: 48px;
+  color: #718096;
+  font-size: 0.875rem;
+  font-weight: 400;
+  margin-bottom: 0.5rem;
   cursor: pointer;
+  line-height: 1.4;
 }
 
 .wine-metadata {
-  margin-top: auto;
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .wine-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-top: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .wine-tag {
@@ -769,8 +778,7 @@ body {
 
 /* Tasting Options */
 .tasting-options {
-  margin-top: 1rem;
-  padding-top: 1rem;
+  padding-top: 0.75rem;
   border-top: 1px solid #e2e8f0;
 }
 
@@ -800,10 +808,10 @@ body {
 
 .wine-footer {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  padding-top: 1.5rem;
-  margin-top: 1rem;
+  padding-top: 1rem;
+  margin-top: 0.75rem;
   border-top: 1px solid #e2e8f0;
 }
 
@@ -1499,3 +1507,18 @@ body {
     font-size: 2.5rem;
   }
 }
+
+/* Utility classes for Tailwind-style layout that App.js uses */
+.absolute { position: absolute; }
+.inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+.flex { display: flex; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.bg-gray-100 { background-color: #f7fafc; }
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+.object-cover { object-fit: cover; }
+.opacity-0 { opacity: 0; }
+.opacity-100 { opacity: 1; }
+.transition-opacity { transition-property: opacity; }
+.duration-300 { transition-duration: 300ms; }
