@@ -20,9 +20,7 @@ const LazyImage = ({ src, alt, className, placeholderSrc = `${process.env.PUBLIC
                             setImageSrc(src);
                             setImageLoading(false);
                         };
-                        if (imageRef.current) {
-                            observer.unobserve(imageRef.current);
-                        }
+                        observer.unobserve(imageRef.current);
                     }
                 });
             },
@@ -386,7 +384,7 @@ const WineDetailModal = ({ wine, isOpen, onClose, tastingRecord, onTasteChange }
     );
 };
 
-// AI Assistant Component
+// AI Assistant Component (Final Conversational Version)
 const AIAssistant = ({ wines }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [input, setInput] = useState('');
@@ -523,7 +521,7 @@ const Hero = () => (
     <section className="hero-modern">
         <div className="hero-overlay" />
         <video autoPlay loop muted playsInline className="hero-video">
-            <source src={process.env.PUBLIC_URL + '/hero.mp4'} type="video/mp4" />
+            <source src={process.env.PUBLIC_URL + '/corks.mp4'} type="video/mp4" />
         </video>
         <div className="relative z-10 text-center px-6">
             <h1 className="text-5xl md:text-7xl font-bold text-white mb-4 stagger-in" style={{ textShadow: '0 3px 15px rgba(0,0,0,0.5)' }}>
@@ -719,7 +717,7 @@ const App = () => {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/service-worker.js')
                     .then(reg => console.log('Service Worker registered'))
-                    .catch(err => console.log('Service Worker registration failed:', err));
+                    .catch(err => console.log('Service Worker registration failed'));
             });
         }
 
