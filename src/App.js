@@ -3,39 +3,35 @@ import './App.css';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import winesData from './wines-2024.json';
 
-// Simple Image Component (no lazy loading)
-useEffect(() => {
-  const observer = new IntersectionObserver(
-    entries => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const img = new Image()
-          img.src = src
-          img.onload = () => {
-            setImageSrc(src)
-            setImageLoading(false)
-          }
-          observer.unobserve(ref)
-        }
-      })
-    },
-    { threshold: 0.1, rootMargin: '50px' }
-  )
+// Lazy Loading Image Component - SIMPLIFIED VERSION
+const LazyImage = ({ src, alt, className, placeholderSrc = '/placeholder-wine.jpg' }) => {
+    const [imageSrc, setImageSrc] = useState(placeholderSrc);
+    const [imageLoading, setImageLoading] = useState(true);
 
-  // capture the current ref
-  const ref = imageRef.current
-  if (ref) {
-    observer.observe(ref)
-  }
+    useEffect(() => {
+        const img = new Image();
+        img.src = src;
+        img.onload = () => {
+            setImageSrc(src);
+            setImageLoading(false);
+        };
+    }, [src]);
 
-  return () => {
-    // clean up on that same ref
-    if (observer && ref) {
-      observer.unobserve(ref)
-    }
-  }
-}, [src, placeholderSrc])
-
+    return (
+        <div className={className} style={{ position: 'relative' }}>
+            {imageLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                    <div className="spinner"></div>
+                </div>
+            )}
+            <img 
+                src={imageSrc} 
+                alt={alt} 
+                className={`w-full h-full object-cover ${imageLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
+            />
+        </div>
+    );
+};
 
 // Analytics functions
 const trackEvent = (eventName, parameters = {}) => {
@@ -894,7 +890,7 @@ const App = () => {
                                         />
                                     ))}
                                 </div>
-                            )}
+                            )}https://github.com/mcapace/wine-top-100/blob/main/src/App.js
                         </div>
                         <Pagination 
                             winesPerPage={winesPerPage} 
