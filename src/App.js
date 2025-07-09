@@ -15,7 +15,12 @@ const LazyImage = ({ src, alt, className, placeholderSrc = '/placeholder-wine.jp
             setImageSrc(src);
             setImageLoading(false);
         };
-    }, [src]);
+        // Added error handling for images that fail to load
+        img.onerror = () => {
+            setImageSrc(placeholderSrc);
+            setImageLoading(false);
+        }
+    }, [src, placeholderSrc]);
 
     return (
         <div className={className} style={{ position: 'relative' }}>
@@ -587,38 +592,46 @@ const WineCard = ({ wine, onSelect, tastingRecord, onTasteChange, compareWines, 
         return 'type-default';
     };
 
-    if (isCondensed) {
-        return (
-            <div className="wine-card-condensed">
-                <div className={`wine-rank ${getRankColor(wine.rank)}`}>{wine.rank}</div>
-                <div className="wine-image-condensed" onClick={() => onSelect(wine)}>
-                    <LazyImage src={wine.image} alt={wine.name} className="wine-bottle-image" />
-                </div>
-                <div className="wine-info-condensed" onClick={() => onSelect(wine)}>
-                    <h3>{wine.name}</h3>
-                    <p>{wine.winery}</p>
-                </div>
-                <div className="wine-details-condensed">
-                    <div className="wine-score">
-                        <div className="score-value">{wine.score}</div>
-                        <div className="score-label">points</div>
-                    </div>
-                    <div className="wine-price">${wine.price}</div>
-                    <button
-                        className={`compare-btn-small ${isInComparison ? 'active' : ''}`}
-                        onClick={() => onCompareToggle(wine)}
-                        title={isInComparison ? 'Remove from comparison' : 'Add to comparison'}
-                    >
-                        <Icons.Compare className="icon-small" />
-                    </button>
+ if (isCondensed) {
+    return (
+        <div className="wine-card-condensed">
+            <div className={`wine-rank-condensed ${getRankColor(wine.rank)}`}>{wine.rank}</div>
+            <div className="wine-image-condensed" onClick={() => onSelect(wine)}>
+                <LazyImage src={wine.image} alt={wine.name} className="wine-bottle-image" />
+            </div>
+            <div className="wine-info-condensed" onClick={() => onSelect(wine)}>
+                <h3>{wine.name}</h3>
+                <p>{wine.winery}</p>
+                <div className="tasting-options-condensed">
+                    <TastingCheckbox wineId={wine.id} tastingRecord={tastingRecord} onTasteChange={onTasteChange} status="tasted" />
+                    <TastingCheckbox wineId={wine.id} tastingRecord={tastingRecord} onTasteChange={onTasteChange} status="want" />
                 </div>
             </div>
-        );
-    }
+            <div className="wine-details-condensed">
+                <div className="price-score-row">
+                    <span className="wine-price">${wine.price}</span>
+                    <span className="wine-score-condensed">{wine.score} pts</span>
+                </div>
+                <button
+                    className={`compare-btn-small ${isInComparison ? 'active' : ''}`}
+                    onClick={() => onCompareToggle(wine)}
+                    title={isInComparison ? 'Remove from comparison' : 'Add to comparison'}
+                >
+                    <Icons.Compare className="icon-small" />
+                </button>
+            </div>
+        </div>
+    );
+}
 
+    // This is the updated Grid View Card
     return (
         <div className="wine-card-modern">
             <div className={`wine-rank ${getRankColor(wine.rank)}`}>{wine.rank}</div>
+            <div className="wine-score-badge">
+                <span className="score-value">{wine.score}</span>
+                <span className="score-label">points</span>
+            </div>
             {isInComparison && (
                 <div className="comparison-badge">
                     <Icons.Check className="icon-small" />
@@ -650,23 +663,21 @@ const WineCard = ({ wine, onSelect, tastingRecord, onTasteChange, compareWines, 
                         <TastingCheckbox wineId={wine.id} tastingRecord={tastingRecord} onTasteChange={onTasteChange} status="tasted" />
                         <TastingCheckbox wineId={wine.id} tastingRecord={tastingRecord} onTasteChange={onTasteChange} status="want" />
                     </div>
-                    <div className="wine-footer">
-                        <div>
-                            <span className="wine-price-large">${wine.price}</span>
-                            <span className="wine-score-inline">{wine.score} pts</span>
-                        </div>
-                        <div className="wine-actions">
-                            <button className="btn-modern btn-small" onClick={() => onSelect(wine)}>View Details</button>
-                            <button 
-                                className={`btn-compare ${isInComparison ? 'active' : ''}`}
-                                onClick={() => onCompareToggle(wine)}
-                                disabled={!isInComparison && compareWines.length >= 3}
-                                title={isInComparison ? 'Remove from comparison' : 'Add to comparison'}
-                            >
-                                <Icons.Compare className="icon-small" />
-                                {isInComparison ? 'Remove' : 'Compare'}
-                            </button>
-                        </div>
+                </div>
+                 {/* This is the updated footer for the grid view */}
+                <div className="wine-footer">
+                    <span className="wine-price-large">${wine.price}</span>
+                    <div className="wine-actions">
+                        <button className="btn-modern btn-small" onClick={() => onSelect(wine)}>View Details</button>
+                        <button 
+                            className={`btn-compare ${isInComparison ? 'active' : ''}`}
+                            onClick={() => onCompareToggle(wine)}
+                            disabled={!isInComparison && compareWines.length >= 3}
+                            title={isInComparison ? 'Remove from comparison' : 'Add to comparison'}
+                        >
+                            <Icons.Compare className="icon-small" />
+                            {isInComparison ? 'Remove' : 'Compare'}
+                        </button>
                     </div>
                 </div>
             </div>

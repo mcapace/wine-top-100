@@ -582,7 +582,7 @@ body {
   gap: 0.5rem;
 }
 
-/* Wine Cards */
+/* Wine Cards - Updated Grid View */
 .wine-card-modern {
   background: white;
   border-radius: 16px;
@@ -633,6 +633,33 @@ body {
 .rank-default {
   background: #8c0004;
   color: white;
+}
+
+/* Move score to top right for grid view */
+.wine-score-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.wine-score-badge .score-value {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #8c0004;
+}
+
+.wine-score-badge .score-label {
+  font-size: 0.625rem;
+  color: #718096;
+  text-transform: uppercase;
 }
 
 .wine-image {
@@ -769,38 +796,34 @@ body {
   font-size: 0.875rem;
 }
 
-/* Wine Footer - Fixed Layout */
+/* Wine Footer - Simplified */
 .wine-footer {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   padding-top: 1rem;
   margin-top: 0.75rem;
   border-top: 1px solid #e2e8f0;
-  gap: 1rem;
 }
 
 .wine-price-large {
   font-size: 1.5rem;
   font-weight: bold;
   color: #2d3748;
-  margin-right: 0.5rem;
 }
 
+/* Hide inline score in grid view since we moved it to badge */
 .wine-score-inline {
-  font-size: 1.125rem;
-  color: #a0aec0;
-  white-space: nowrap;
+  display: none;
 }
 
 .wine-actions {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  flex-shrink: 0;
 }
 
-/* Wine Card Condensed */
+/* Wine Card Condensed - Updated */
 .wine-card-condensed {
   background: white;
   padding: 1rem 1.5rem;
@@ -810,12 +833,26 @@ body {
   display: flex;
   align-items: center;
   gap: 1rem;
-  cursor: pointer;
+  position: relative;
 }
 
 .wine-card-condensed:hover {
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   transform: translateX(4px);
+}
+
+/* Rank always visible in condensed view */
+.wine-rank-condensed {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: bold;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .wine-image-condensed {
@@ -825,16 +862,20 @@ body {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .wine-info-condensed {
   flex-grow: 1;
   min-width: 0;
+  cursor: pointer;
 }
 
 .wine-info-condensed h3 {
   font-weight: bold;
   color: #1a202c;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -842,18 +883,53 @@ body {
 
 .wine-info-condensed p {
   font-size: 0.875rem;
-  color: #a0aec0;
+  color: #718096;
+  margin-bottom: 0.5rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+/* Tasting options in condensed view */
+.tasting-options-condensed {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.tasting-options-condensed .tasting-checkbox {
+  margin: 0;
+}
+
+.tasting-options-condensed .tasting-checkbox span {
+  font-size: 0.75rem;
+}
+
 .wine-details-condensed {
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
   flex-shrink: 0;
-  margin-left: auto;
+}
+
+/* Price and score on same line */
+.price-score-row {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.wine-details-condensed .wine-price {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #8c0004;
+}
+
+.wine-score-condensed {
+  font-size: 1rem;
+  color: #718096;
+  white-space: nowrap;
 }
 
 .wine-score {
@@ -2108,7 +2184,7 @@ body {
   color: white;
 }
 
-/* Mobile responsive */
+/* Mobile responsive updates */
 @media (max-width: 768px) {
   .tasting-tracker-panel {
     width: 100%;
@@ -2133,7 +2209,6 @@ body {
   
   .wine-actions {
     flex-direction: column;
-    align-items: stretch;
     width: 100%;
     gap: 0.5rem;
   }
@@ -2155,11 +2230,23 @@ body {
   .comparison-grid {
     grid-template-columns: 1fr;
   }
+
+  .tasting-options-condensed {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .price-score-row {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+  }
 }
 
-/* For medium screens, stack buttons if needed */
+/* For medium screens */
 @media (max-width: 1024px) {
-  .wine-card-modern .wine-actions {
+  .wine-actions {
+    flex-direction: row;
     flex-wrap: wrap;
   }
   
