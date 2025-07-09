@@ -5,54 +5,56 @@ import winesData from './wines-2024.json';
 
 // Lazy loading component
 const LazyImage = ({ src, alt, className, placeholderSrc = `${process.env.PUBLIC_URL}/placeholder-wine.jpg` }) => {
-    const [imageSrc, setImageSrc] = useState(placeholderSrc);
-    const [imageLoading, setImageLoading] = useState(true);
-    const imageRef = useRef();
+  const [imageSrc, setImageSrc] = useState(placeholderSrc);
+  const [imageLoading, setImageLoading] = useState(true);
+  const imageRef = useRef();
 
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            entries => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const img = new Image();
-                        img.src = src;
-                        img.onload = () => {
-                            setImageSrc(src);
-                            setImageLoading(false);
-                        };
-                        observer.unobserve(imageRef.current);
-                    }
-                });
-            },
-            { threshold: 0.1, rootMargin: '50px' }
-        );
+  useEffect(() => {
+    const node = imageRef.current;
+    if (!node) return;
 
-        if (imageRef.current) {
-            observer.observe(imageRef.current);
-        }
-
-        return () => {
-            if (observer && imageRef.current) {
-                observer.unobserve(imageRef.current);
-            }
-        };
-    }, [src, placeholderSrc]);
-
-    return (
-        <div ref={imageRef} className={`relative ${className}`}>
-            <img 
-                src={imageSrc} 
-                alt={alt} 
-                className={`w-full h-full object-contain transition-opacity duration-300 ${imageLoading ? 'opacity-50' : 'opacity-100'}`}
-            />
-            {imageLoading && src !== placeholderSrc && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-8 h-8 border-2 border-[#8c0004] border-t-transparent rounded-full animate-spin"></div>
-                </div>
-            )}
-        </div>
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const img = new Image();
+            img.src = src;
+            img.onload = () => {
+              setImageSrc(src);
+              setImageLoading(false);
+            };
+            observer.unobserve(node);
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '50px' }
     );
+
+    observer.observe(node);
+
+    return () => {
+      observer.unobserve(node);
+    };
+  }, [src, placeholderSrc]);
+
+  return (
+    <div ref={imageRef} className={`relative ${className}`}>
+      <img
+        src={imageSrc}
+        alt={alt}
+        className={`w-full h-full object-contain transition-opacity duration-300 ${
+          imageLoading ? 'opacity-50' : 'opacity-100'
+        }`}
+      />
+      {imageLoading && src !== placeholderSrc && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-[#8c0004] border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+    </div>
+  );
 };
+
 
 // Analytics functions
 const trackEvent = (eventName, parameters = {}) => {
