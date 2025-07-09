@@ -113,6 +113,8 @@ const Icons = {
 
 const useScrollAnimation = () => {
     useEffect(() => {
+        const elements = document.querySelectorAll('.reveal');
+        
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -121,10 +123,11 @@ const useScrollAnimation = () => {
             });
         }, { threshold: 0.1 });
 
-        const elements = document.querySelectorAll('.reveal');
         elements.forEach((el) => observer.observe(el));
 
-        return () => elements.forEach((el) => observer.unobserve(el));
+        return () => {
+            observer.disconnect();
+        };
     }, []);
 };
 
