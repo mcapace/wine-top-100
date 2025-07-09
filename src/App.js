@@ -3,57 +3,57 @@ import './App.css';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import winesData from './wines-2024.json';
 
-// Lazy loading component
-const LazyImage = ({ src, alt, className, placeholderSrc = `${process.env.PUBLIC_URL}/placeholder-wine.jpg` }) => {
+// Lazy Loading Image Component
+const LazyImage = ({ src, alt, className, placeholderSrc = '/placeholder-wine.jpg' }) => {
     const [imageSrc, setImageSrc] = useState(placeholderSrc);
     const [imageLoading, setImageLoading] = useState(true);
-    const imageRef = useRef();
+    const imageRef = useRef(null);
 
     useEffect(() => {
-    const currentImageRef = imageRef.current; // Store ref in a variable
-    
-    const observer = new IntersectionObserver(
-        entries => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const img = new Image();
-                    img.src = src;
-                    img.onload = () => {
-                        setImageSrc(src);
-                        setImageLoading(false);
-                    };
-                    if (currentImageRef) {
-                        observer.unobserve(currentImageRef);
+        const currentRef = imageRef.current; // Store ref value
+        
+        const observer = new IntersectionObserver(
+            entries => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = new Image();
+                        img.src = src;
+                        img.onload = () => {
+                            setImageSrc(src);
+                            setImageLoading(false);
+                        };
+                        if (currentRef) {
+                            observer.unobserve(currentRef);
+                        }
                     }
-                }
-            });
-        },
-        { threshold: 0.1, rootMargin: '50px' }
-    );
+                });
+            },
+            { threshold: 0.1, rootMargin: '50px' }
+        );
 
-    if (currentImageRef) {
-        observer.observe(currentImageRef);
-    }
-
-    return () => {
-        if (observer && currentImageRef) {
-            observer.unobserve(currentImageRef); // Use the variable, not imageRef.current
+        if (currentRef) {
+            observer.observe(currentRef);
         }
-    };
-}, [src, placeholderSrc]);
+
+        return () => {
+            if (currentRef) {
+                observer.unobserve(currentRef); // Use stored ref
+            }
+        };
+    }, [src, placeholderSrc]);
 
     return (
-        <div ref={imageRef} className={`lazy-image-container ${className}`}>
-            <img 
-                src={imageSrc} 
-                alt={alt} 
-                className={`lazy-image ${imageLoading ? 'loading' : 'loaded'}`}
-            />
-            {imageLoading && src !== placeholderSrc && (
-                <div className="lazy-image-spinner">
+        <div ref={imageRef} className={className} style={{ position: 'relative' }}>
+            {imageLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
                     <div className="spinner"></div>
                 </div>
             )}
+            <img 
+                src={imageSrc} 
+                alt={alt} 
+                className={`w-full h-full object-cover ${imageLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
+            />
         </div>
     );
 };
