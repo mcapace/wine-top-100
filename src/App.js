@@ -109,6 +109,8 @@ const Icons = {
     X: ({ className }) => (<svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>),
     Menu: ({ className }) => (<svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="18" x2="21" y2="18" /></svg>),
     Download: ({ className }) => (<svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>),
+    Compare: ({ className }) => (<svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="9" y1="3" x2="9" y2="21" /><line x1="15" y1="3" x2="15" y2="21" /></svg>),
+    Check: ({ className }) => (<svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>),
 };
 
 // FIXED Scroll Animation Hook
@@ -424,6 +426,122 @@ const TastingTrackerPanel = ({ isOpen, onToggle, tastingRecord, wines, onTasteCh
     );
 };
 
+// Wine Comparison Bar Component
+const ComparisonBar = ({ compareWines, onRemove, onCompare }) => {
+    if (compareWines.length === 0) return null;
+
+    return (
+        <div className={`comparison-bar ${compareWines.length > 0 ? 'show' : ''}`}>
+            <div className="comparison-content">
+                <div className="comparison-header">
+                    <h4>Compare Wines ({compareWines.length}/3)</h4>
+                    {compareWines.length >= 2 && (
+                        <button className="btn-modern btn-small" onClick={onCompare}>
+                            Compare Now
+                        </button>
+                    )}
+                </div>
+                <div className="comparison-wines">
+                    {compareWines.map(wine => (
+                        <div key={wine.id} className="comparison-wine-item">
+                            <img src={wine.image || '/placeholder-wine.jpg'} alt={wine.name} />
+                            <div className="comparison-wine-info">
+                                <span className="wine-name">{wine.name}</span>
+                                <span className="wine-vintage">{wine.vintage}</span>
+                            </div>
+                            <button 
+                                className="remove-compare-btn"
+                                onClick={() => onRemove(wine.id)}
+                            >
+                                <Icons.X className="icon-small" />
+                            </button>
+                        </div>
+                    ))}
+                    {[...Array(3 - compareWines.length)].map((_, index) => (
+                        <div key={`empty-${index}`} className="comparison-wine-empty">
+                            <Icons.Wine className="empty-wine-icon" />
+                            <span>Add wine to compare</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Wine Comparison Modal Component
+const ComparisonModal = ({ wines, isOpen, onClose }) => {
+    if (!isOpen || !wines || wines.length === 0) return null;
+
+    return (
+        <div className="modal-overlay">
+            <div className="modal-backdrop" onClick={onClose} />
+            <div className="modal-content comparison-modal">
+                <button onClick={onClose} className="modal-close">
+                    <Icons.X className="icon-close" />
+                </button>
+                
+                <div className="comparison-modal-header">
+                    <h2>Wine Comparison</h2>
+                    <p>Compare up to 3 wines side by side</p>
+                </div>
+
+                <div className="comparison-grid">
+                    {wines.map(wine => (
+                        <div key={wine.id} className="comparison-column">
+                            <div className="comparison-wine-header">
+                                <img 
+                                    src={wine.image || '/placeholder-wine.jpg'} 
+                                    alt={wine.name}
+                                    className="comparison-wine-image"
+                                />
+                                <h3>{wine.name}</h3>
+                                <p className="comparison-winery">{wine.winery}</p>
+                            </div>
+
+                            <div className="comparison-details">
+                                <div className="detail-row">
+                                    <span className="detail-label">Rank</span>
+                                    <span className="detail-value">#{wine.rank}</span>
+                                </div>
+                                <div className="detail-row">
+                                    <span className="detail-label">Score</span>
+                                    <span className="detail-value score">{wine.score} pts</span>
+                                </div>
+                                <div className="detail-row">
+                                    <span className="detail-label">Price</span>
+                                    <span className="detail-value price">${wine.price}</span>
+                                </div>
+                                <div className="detail-row">
+                                    <span className="detail-label">Type</span>
+                                    <span className="detail-value">{wine.type}</span>
+                                </div>
+                                <div className="detail-row">
+                                    <span className="detail-label">Vintage</span>
+                                    <span className="detail-value">{wine.vintage}</span>
+                                </div>
+                                <div className="detail-row">
+                                    <span className="detail-label">Region</span>
+                                    <span className="detail-value">{wine.region}</span>
+                                </div>
+                                <div className="detail-row">
+                                    <span className="detail-label">Country</span>
+                                    <span className="detail-value">{wine.country}</span>
+                                </div>
+                            </div>
+
+                            <div className="comparison-description">
+                                <h4>Tasting Notes</h4>
+                                <p>{wine.description}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const Pagination = ({ winesPerPage, totalWines, paginate, currentPage }) => {
     const pageNumbers = [];
     for (let i = 1; i <= Math.ceil(totalWines / winesPerPage); i++) {
@@ -450,7 +568,9 @@ const Pagination = ({ winesPerPage, totalWines, paginate, currentPage }) => {
     );
 };
 
-const WineCard = ({ wine, onSelect, tastingRecord, onTasteChange, isCondensed }) => {
+const WineCard = ({ wine, onSelect, tastingRecord, onTasteChange, compareWines, onCompareToggle, isCondensed }) => {
+    const isInComparison = compareWines.some(w => w.id === wine.id);
+
     const getRankColor = (rank) => {
         if (rank === 1) return 'rank-gold';
         if (rank === 2) return 'rank-silver';
@@ -469,12 +589,12 @@ const WineCard = ({ wine, onSelect, tastingRecord, onTasteChange, isCondensed })
 
     if (isCondensed) {
         return (
-            <div className="wine-card-condensed" onClick={() => onSelect(wine)}>
+            <div className="wine-card-condensed">
                 <div className={`wine-rank ${getRankColor(wine.rank)}`}>{wine.rank}</div>
-                <div className="wine-image-condensed">
+                <div className="wine-image-condensed" onClick={() => onSelect(wine)}>
                     <LazyImage src={wine.image} alt={wine.name} className="wine-bottle-image" />
                 </div>
-                <div className="wine-info-condensed">
+                <div className="wine-info-condensed" onClick={() => onSelect(wine)}>
                     <h3>{wine.name}</h3>
                     <p>{wine.winery}</p>
                 </div>
@@ -484,6 +604,13 @@ const WineCard = ({ wine, onSelect, tastingRecord, onTasteChange, isCondensed })
                         <div className="score-label">points</div>
                     </div>
                     <div className="wine-price">${wine.price}</div>
+                    <button
+                        className={`compare-btn-small ${isInComparison ? 'active' : ''}`}
+                        onClick={() => onCompareToggle(wine)}
+                        title={isInComparison ? 'Remove from comparison' : 'Add to comparison'}
+                    >
+                        <Icons.Compare className="icon-small" />
+                    </button>
                 </div>
             </div>
         );
@@ -492,6 +619,11 @@ const WineCard = ({ wine, onSelect, tastingRecord, onTasteChange, isCondensed })
     return (
         <div className="wine-card-modern">
             <div className={`wine-rank ${getRankColor(wine.rank)}`}>{wine.rank}</div>
+            {isInComparison && (
+                <div className="comparison-badge">
+                    <Icons.Check className="icon-small" />
+                </div>
+            )}
             <div className="wine-image" onClick={() => onSelect(wine)}>
                 {wine.image ? (
                     <LazyImage 
@@ -523,7 +655,18 @@ const WineCard = ({ wine, onSelect, tastingRecord, onTasteChange, isCondensed })
                             <span className="wine-price-large">${wine.price}</span>
                             <span className="wine-score-inline">{wine.score} pts</span>
                         </div>
-                        <button className="btn-modern btn-small" onClick={() => onSelect(wine)}>View Details</button>
+                        <div className="wine-actions">
+                            <button className="btn-modern btn-small" onClick={() => onSelect(wine)}>View Details</button>
+                            <button 
+                                className={`btn-compare ${isInComparison ? 'active' : ''}`}
+                                onClick={() => onCompareToggle(wine)}
+                                disabled={!isInComparison && compareWines.length >= 3}
+                                title={isInComparison ? 'Remove from comparison' : 'Add to comparison'}
+                            >
+                                <Icons.Compare className="icon-small" />
+                                {isInComparison ? 'Remove' : 'Compare'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -881,6 +1024,8 @@ const App = () => {
     const [isCondensed, setIsCondensed] = useState(false);
     const [showWelcomePopup, setShowWelcomePopup] = useState(false);
     const [showTastingPanel, setShowTastingPanel] = useState(false);
+    const [compareWines, setCompareWines] = useState([]);
+    const [showComparisonModal, setShowComparisonModal] = useState(false);
     const [tastingRecord, setTastingRecord] = useState(() => {
         try {
             const savedRecord = localStorage.getItem('tastingRecord');
@@ -929,6 +1074,31 @@ const App = () => {
         });
     };
 
+    const handleCompareToggle = (wine) => {
+        setCompareWines(prev => {
+            const isInList = prev.some(w => w.id === wine.id);
+            if (isInList) {
+                trackEvent('remove_from_comparison', { wine_id: wine.id, wine_name: wine.name });
+                return prev.filter(w => w.id !== wine.id);
+            } else if (prev.length < 3) {
+                trackEvent('add_to_comparison', { wine_id: wine.id, wine_name: wine.name });
+                return [...prev, wine];
+            }
+            return prev;
+        });
+    };
+
+    const handleRemoveFromComparison = (wineId) => {
+        setCompareWines(prev => prev.filter(w => w.id !== wineId));
+    };
+
+    const handleCompare = () => {
+        if (compareWines.length >= 2) {
+            trackEvent('open_comparison', { wine_count: compareWines.length });
+            setShowComparisonModal(true);
+        }
+    };
+
     useScrollAnimation();
 
     const filteredWines = useMemo(() => {
@@ -963,7 +1133,6 @@ const App = () => {
             <main>
                 <section id="wines" className="wines-section">
                     <div className="container">
-                        {/* NO OLD TASTING SUMMARY HERE! */}
                         <div className="section-header reveal">
                             <h2>The Collection</h2>
                             <p>Discover extraordinary wines from renowned vineyards</p>
@@ -984,7 +1153,9 @@ const App = () => {
                                             onSelect={setSelectedWine} 
                                             isCondensed={true} 
                                             tastingRecord={tastingRecord} 
-                                            onTasteChange={handleTasteChange} 
+                                            onTasteChange={handleTasteChange}
+                                            compareWines={compareWines}
+                                            onCompareToggle={handleCompareToggle}
                                         />
                                     ))}
                                 </div>
@@ -997,7 +1168,9 @@ const App = () => {
                                             onSelect={setSelectedWine} 
                                             isCondensed={false} 
                                             tastingRecord={tastingRecord} 
-                                            onTasteChange={handleTasteChange} 
+                                            onTasteChange={handleTasteChange}
+                                            compareWines={compareWines}
+                                            onCompareToggle={handleCompareToggle}
                                         />
                                     ))}
                                 </div>
@@ -1013,12 +1186,22 @@ const App = () => {
                 </section>
             </main>
             <Footer />
+            <ComparisonBar 
+                compareWines={compareWines}
+                onRemove={handleRemoveFromComparison}
+                onCompare={handleCompare}
+            />
             <WineDetailModal 
                 wine={selectedWine} 
                 isOpen={!!selectedWine} 
                 onClose={() => setSelectedWine(null)} 
                 tastingRecord={tastingRecord} 
                 onTasteChange={handleTasteChange} 
+            />
+            <ComparisonModal 
+                wines={compareWines}
+                isOpen={showComparisonModal}
+                onClose={() => setShowComparisonModal(false)}
             />
             <AIAssistant wines={wines} />
             <WelcomePopup 

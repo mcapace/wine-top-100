@@ -1825,3 +1825,356 @@ body {
     transform: translateX(100%);
   }
 }
+
+/* Wine Comparison Feature */
+.btn-compare {
+  background: #e2e8f0;
+  color: #4a5568;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 0.5rem;
+}
+
+.btn-compare:hover:not(:disabled) {
+  background: #cbd5e0;
+  transform: translateY(-1px);
+}
+
+.btn-compare.active {
+  background: #22c55e;
+  color: white;
+}
+
+.btn-compare:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wine-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.comparison-badge {
+  position: absolute;
+  top: 3.5rem;
+  left: 1rem;
+  background: #22c55e;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+  animation: bounceIn 0.3s ease;
+}
+
+@keyframes bounceIn {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* Comparison Bar */
+.comparison-bar {
+  position: fixed;
+  bottom: -200px;
+  left: 0;
+  right: 0;
+  background: white;
+  box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
+  z-index: 95;
+  transition: bottom 0.3s ease;
+  border-top: 3px solid #8c0004;
+}
+
+.comparison-bar.show {
+  bottom: 0;
+}
+
+.comparison-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.comparison-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.comparison-header h4 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin: 0;
+}
+
+.comparison-wines {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.comparison-wine-item {
+  background: #f7fafc;
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  position: relative;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.comparison-wine-item:hover {
+  border-color: #8c0004;
+  transform: translateY(-2px);
+}
+
+.comparison-wine-item img {
+  width: 50px;
+  height: 80px;
+  object-fit: contain;
+}
+
+.comparison-wine-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.comparison-wine-info .wine-name {
+  font-weight: 600;
+  color: #1a202c;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.25rem;
+}
+
+.comparison-wine-info .wine-vintage {
+  font-size: 0.875rem;
+  color: #718096;
+}
+
+.remove-compare-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.25rem;
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.1);
+  border: none;
+  cursor: pointer;
+  color: #ef4444;
+  transition: all 0.3s ease;
+}
+
+.remove-compare-btn:hover {
+  background: #ef4444;
+  color: white;
+}
+
+.comparison-wine-empty {
+  background: #f7fafc;
+  border: 2px dashed #cbd5e0;
+  border-radius: 12px;
+  padding: 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: #a0aec0;
+}
+
+.empty-wine-icon {
+  width: 40px;
+  height: 40px;
+  color: #cbd5e0;
+}
+
+.comparison-wine-empty span {
+  font-size: 0.875rem;
+}
+
+/* Comparison Modal */
+.comparison-modal {
+  max-width: 1200px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.comparison-modal-header {
+  text-align: center;
+  padding: 2rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.comparison-modal-header h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin-bottom: 0.5rem;
+}
+
+.comparison-modal-header p {
+  color: #718096;
+}
+
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  padding: 2rem;
+}
+
+.comparison-column {
+  background: #f7fafc;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.comparison-wine-header {
+  text-align: center;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.comparison-wine-image {
+  height: 200px;
+  width: auto;
+  object-fit: contain;
+  margin: 0 auto 1rem;
+}
+
+.comparison-wine-header h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin-bottom: 0.5rem;
+}
+
+.comparison-winery {
+  color: #718096;
+}
+
+.comparison-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.detail-label {
+  font-size: 0.875rem;
+  color: #718096;
+  font-weight: 500;
+}
+
+.detail-value {
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.detail-value.score {
+  color: #8c0004;
+  font-size: 1.125rem;
+}
+
+.detail-value.price {
+  color: #059669;
+  font-size: 1.125rem;
+}
+
+.comparison-description {
+  background: white;
+  padding: 1rem;
+  border-radius: 8px;
+  flex: 1;
+}
+
+.comparison-description h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin-bottom: 0.75rem;
+}
+
+.comparison-description p {
+  font-size: 0.875rem;
+  color: #4a5568;
+  line-height: 1.6;
+}
+
+/* Condensed view comparison button */
+.compare-btn-small {
+  padding: 0.5rem;
+  background: #e2e8f0;
+  color: #4a5568;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-left: 0.5rem;
+}
+
+.compare-btn-small:hover {
+  background: #cbd5e0;
+}
+
+.compare-btn-small.active {
+  background: #22c55e;
+  color: white;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .comparison-bar {
+    bottom: -300px;
+  }
+  
+  .comparison-wines {
+    grid-template-columns: 1fr;
+  }
+  
+  .comparison-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .wine-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .btn-compare {
+    margin-left: 0;
+    margin-top: 0.5rem;
+    justify-content: center;
+  }
+}
