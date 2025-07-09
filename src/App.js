@@ -899,26 +899,235 @@ const Hero = () => (
     </section>
 );
 
-const FilterBar = ({ filters, onFiltersChange, isCondensed, onViewChange }) => {
-    const [searchTerm, setSearchTerm] = useState('');
-    const allTypes = [...new Set(wines.map(wine => wine.type))].filter(Boolean);
-    const allCountries = [...new Set(wines.map(wine => wine.country))].filter(Boolean);
-    
-    const handleSearch = (value) => {
+// Enhanced Search Component
+const EnhancedSearch = ({ wines, onSearch, filters }) => {
+    const [searchTerm, setSearchTerm] = useState(filters.search || '');
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [suggestions, setSuggestions] = useState([]);
+    const [recentSearches, setRecentSearches] = useState([]);
+    const [selectedIndex, setSelectedIndex] = useState(-1);
+    const searchRef = useRef(null);
+
+    // Load recent searches from localStorage
+    useEffect(() => {
+        const saved = localStorage.getItem('recentWineSearches');
+        if (saved) {
+            setRecentSearches(JSON.parse(saved));
+        }
+    }, []);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (searchRef.current && !searchRef.current.contains(event.target)) {
+                setShowSuggestions(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Save search to recent searches
+    const saveRecentSearch = (term) => {
+        if (!term.trim()) return;
+        const updated = [term, ...recentSearches.filter(s => s !== term)].slice(0, 5);
+        setRecentSearches(updated);
+        localStorage.setItem('recentWineSearches', JSON.stringify(updated));
+    };
+
+    // Search function
+    const searchWines = (term) => {
+        if (!term.trim()) return [];
+        
+        const searchLower = term.toLowerCase();
+        return wines.filter(wine => {
+            return (
+                wine.name.toLowerCase().includes(searchLower) ||
+                wine.winery.toLowerCase().includes(searchLower) ||
+                wine.region.toLowerCase().includes(searchLower) ||
+                wine.country.toLowerCase().includes(searchLower) ||
+                wine.type.toLowerCase().includes(searchLower) ||
+                wine.vintage.toString().includes(searchLower) ||
+                wine.price.toString().includes(searchLower)
+            );
+        }).slice(0, 8); // Limit to 8 suggestions
+    };
+
+    // Handle input change
+    const handleInputChange = (value) => {
         setSearchTerm(value);
-        onFiltersChange({ ...filters, search: value });
+        setSelectedIndex(-1);
+        
+        if (value.trim()) {
+            const results = searchWines(value);
+            setSuggestions(results);
+            setShowSuggestions(true);
+        } else {
+            setSuggestions([]);
+            setShowSuggestions(false);
+        }
+        
+        onSearch({ ...filters, search: value });
         
         if (value) {
-            setTimeout(() => {
-                const results = wines.filter(wine => 
-                    wine.name.toLowerCase().includes(value.toLowerCase()) || 
-                    wine.winery.toLowerCase().includes(value.toLowerCase())
-                ).length;
-                trackSearch(value, results);
-            }, 500);
+            trackSearch(value, suggestions.length);
         }
     };
 
+    // Handle suggestion click
+    const handleSuggestionClick = (wine) => {
+        setSearchTerm(wine.name);
+        setShowSuggestions(false);
+        saveRecentSearch(wine.name);
+        onSearch({ ...filters, search: wine.name });
+        trackEvent('search_suggestion_clicked', { wine_id: wine.id, wine_name: wine.name });
+    };
+
+    // Handle recent search click
+    const handleRecentSearchClick = (term) => {
+        setSearchTerm(term);
+        handleInputChange(term);
+        trackEvent('recent_search_clicked', { search_term: term });
+    };
+
+    // Clear recent searches
+    const clearRecentSearches = () => {
+        setRecentSearches([]);
+        localStorage.removeItem('recentWineSearches');
+    };
+
+    // Keyboard navigation
+    const handleKeyDown = (e) => {
+        if (!showSuggestions) return;
+
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                setSelectedIndex(prev => 
+                    prev < suggestions.length - 1 ? prev + 1 : prev
+                );
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                setSelectedIndex(prev => prev > 0 ? prev - 1 : -1);
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (selectedIndex >= 0 && suggestions[selectedIndex]) {
+                    handleSuggestionClick(suggestions[selectedIndex]);
+                } else if (searchTerm.trim()) {
+                    saveRecentSearch(searchTerm);
+                    setShowSuggestions(false);
+                }
+                break;
+            case 'Escape':
+                setShowSuggestions(false);
+                break;
+        }
+    };
+
+    return (
+        <div className="enhanced-search" ref={searchRef}>
+            <div className="search-input-wrapper">
+                <Icons.Search className="search-icon" />
+                <input
+                    type="text"
+                    placeholder="Search wines, wineries, regions..."
+                    value={searchTerm}
+                    onChange={(e) => handleInputChange(e.target.value)}
+                    onFocus={() => setShowSuggestions(true)}
+                    onKeyDown={handleKeyDown}
+                    className="enhanced-search-input"
+                />
+                {searchTerm && (
+                    <button
+                        className="search-clear"
+                        onClick={() => handleInputChange('')}
+                    >
+                        <Icons.X className="icon-small" />
+                    </button>
+                )}
+            </div>
+
+            {showSuggestions && (
+                <div className="search-dropdown">
+                    {/* Recent Searches */}
+                    {!searchTerm && recentSearches.length > 0 && (
+                        <div className="search-section">
+                            <div className="search-section-header">
+                                <span>Recent Searches</span>
+                                <button 
+                                    className="clear-recent"
+                                    onClick={clearRecentSearches}
+                                >
+                                    Clear
+                                </button>
+                            </div>
+                            {recentSearches.map((search, index) => (
+                                <div
+                                    key={index}
+                                    className="recent-search-item"
+                                    onClick={() => handleRecentSearchClick(search)}
+                                >
+                                    <Icons.Search className="icon-small" />
+                                    <span>{search}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Search Suggestions */}
+                    {searchTerm && suggestions.length > 0 && (
+                        <div className="search-section">
+                            <div className="search-section-header">
+                                <span>Suggestions</span>
+                                <span className="result-count">{suggestions.length} results</span>
+                            </div>
+                            {suggestions.map((wine, index) => (
+                                <div
+                                    key={wine.id}
+                                    className={`suggestion-item ${selectedIndex === index ? 'selected' : ''}`}
+                                    onClick={() => handleSuggestionClick(wine)}
+                                    onMouseEnter={() => setSelectedIndex(index)}
+                                >
+                                    <img 
+                                        src={wine.image || '/placeholder-wine.jpg'} 
+                                        alt={wine.name}
+                                        className="suggestion-image"
+                                    />
+                                    <div className="suggestion-info">
+                                        <div className="suggestion-name">{wine.name}</div>
+                                        <div className="suggestion-details">
+                                            {wine.winery} • {wine.vintage} • {wine.region}
+                                        </div>
+                                        <div className="suggestion-meta">
+                                            <span className="suggestion-price">${wine.price}</span>
+                                            <span className="suggestion-score">{wine.score} pts</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* No Results */}
+                    {searchTerm && suggestions.length === 0 && (
+                        <div className="search-no-results">
+                            <Icons.Search className="no-results-icon" />
+                            <p>No wines found for "{searchTerm}"</p>
+                            <span>Try searching by winery, region, or vintage</span>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
+const FilterBar = ({ filters, onFiltersChange, isCondensed, onViewChange }) => {
+    const allTypes = [...new Set(wines.map(wine => wine.type))].filter(Boolean);
+    const allCountries = [...new Set(wines.map(wine => wine.country))].filter(Boolean);
+    
     const handleFilterChange = (filterType, value) => {
         onFiltersChange({ ...filters, [filterType]: value });
         trackFilterUse(filterType, value);
@@ -927,16 +1136,11 @@ const FilterBar = ({ filters, onFiltersChange, isCondensed, onViewChange }) => {
     return (
         <div className="filter-bar">
             <div className="filter-row">
-                <div className="search-container">
-                    <Icons.Search className="search-icon" />
-                    <input 
-                        type="text" 
-                        placeholder="Search wines..." 
-                        value={searchTerm} 
-                        onChange={(e) => handleSearch(e.target.value)} 
-                        className="search-input"
-                    />
-                </div>
+                <EnhancedSearch 
+                    wines={wines}
+                    onSearch={onFiltersChange}
+                    filters={filters}
+                />
                 <div className="view-toggle">
                     <button 
                         onClick={() => { onViewChange(false); trackEvent('view_mode_changed', { mode: 'grid' }); }} 
@@ -952,6 +1156,7 @@ const FilterBar = ({ filters, onFiltersChange, isCondensed, onViewChange }) => {
                     </button>
                 </div>
             </div>
+            {/* Rest of FilterBar remains the same */}
             <div className="filter-section">
                 <p className="filter-label">Wine Type</p>
                 <div className="filter-buttons">
@@ -983,7 +1188,6 @@ const FilterBar = ({ filters, onFiltersChange, isCondensed, onViewChange }) => {
         </div>
     );
 };
-
 const Footer = () => (
     <footer className="footer">
         <div className="footer-container">
