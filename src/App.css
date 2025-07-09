@@ -7,8 +7,8 @@
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
-body { 
-    font-family: 'Georgia', 'Times New Roman', serif; 
+body {
+    font-family: 'Georgia', 'Times New Roman', serif;
     background-color: rgb(var(--off-white));
     color: rgb(var(--dark-gray));
 }
@@ -109,8 +109,8 @@ body {
     object-fit: contain;
 }
 .ai-assistant-btn {
-    position: fixed; 
-    bottom: 24px; 
+    position: fixed;
+    bottom: 24px;
     right: 24px;
     width: 80px; /* Changed from 60px */
     height: 80px; /* Changed from 60px */
