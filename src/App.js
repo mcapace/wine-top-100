@@ -5,56 +5,56 @@ import winesData from './wines-2024.json';
 
 // Lazy loading component
 const LazyImage = ({ src, alt, className, placeholderSrc = `${process.env.PUBLIC_URL}/placeholder-wine.jpg` }) => {
-  const [imageSrc, setImageSrc] = useState(placeholderSrc);
-  const [imageLoading, setImageLoading] = useState(true);
-  const imageRef = useRef();
+    const [imageSrc, setImageSrc] = useState(placeholderSrc);
+    const [imageLoading, setImageLoading] = useState(true);
+    const imageRef = useRef();
 
-  useEffect(() => {
-    const node = imageRef.current;
-    if (!node) return;
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            entries => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = new Image();
+                        img.src = src;
+                        img.onload = () => {
+                            setImageSrc(src);
+                            setImageLoading(false);
+                        };
+                        if (imageRef.current) {
+                            observer.unobserve(imageRef.current);
+                        }
+                    }
+                });
+            },
+            { threshold: 0.1, rootMargin: '50px' }
+        );
 
-    const observer = new IntersectionObserver(
-      entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const img = new Image();
-            img.src = src;
-            img.onload = () => {
-              setImageSrc(src);
-              setImageLoading(false);
-            };
-            observer.unobserve(node);
-          }
-        });
-      },
-      { threshold: 0.1, rootMargin: '50px' }
-    );
+        if (imageRef.current) {
+            observer.observe(imageRef.current);
+        }
 
-    observer.observe(node);
+        return () => {
+            if (observer && imageRef.current) {
+                observer.unobserve(imageRef.current);
+            }
+        };
+    }, [src, placeholderSrc]);
 
-    return () => {
-      observer.unobserve(node);
-    };
-  }, [src, placeholderSrc]);
-
-  return (
-    <div ref={imageRef} className={`relative ${className}`}>
-      <img
-        src={imageSrc}
-        alt={alt}
-        className={`w-full h-full object-contain transition-opacity duration-300 ${
-          imageLoading ? 'opacity-50' : 'opacity-100'
-        }`}
-      />
-      {imageLoading && src !== placeholderSrc && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-[#8c0004] border-t-transparent rounded-full animate-spin" />
+    return (
+        <div ref={imageRef} className={`lazy-image-container ${className}`}>
+            <img 
+                src={imageSrc} 
+                alt={alt} 
+                className={`lazy-image ${imageLoading ? 'loading' : 'loaded'}`}
+            />
+            {imageLoading && src !== placeholderSrc && (
+                <div className="lazy-image-spinner">
+                    <div className="spinner"></div>
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 };
-
 
 // Analytics functions
 const trackEvent = (eventName, parameters = {}) => {
@@ -108,23 +108,6 @@ const trackExport = (format, itemCount) => {
     });
 };
 
-// Initialize scroll tracking
-let scrollDepthTracked = { 25: false, 50: false, 75: false, 100: false };
-const initScrollTracking = () => {
-    window.addEventListener('scroll', () => {
-        const scrollPercentage = Math.round(
-            (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100
-        );
-
-        Object.entries(scrollDepthTracked).forEach(([depth, tracked]) => {
-            if (!tracked && scrollPercentage >= parseInt(depth)) {
-                scrollDepthTracked[depth] = true;
-                trackEvent('scroll_depth', { percent_scrolled: depth });
-            }
-        });
-    });
-};
-
 const wines = winesData.map((wine, index) => ({
     id: parseInt(wine.top100_rank, 10) || index + 1,
     rank: parseInt(wine.top100_rank, 10) || 0,
@@ -154,27 +137,85 @@ const Icons = {
 const useScrollAnimation = () => {
     useEffect(() => {
         const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('active'); } });
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
         }, { threshold: 0.1 });
+
         const elements = document.querySelectorAll('.reveal');
         elements.forEach((el) => observer.observe(el));
+
         return () => elements.forEach((el) => observer.unobserve(el));
     }, []);
 };
 
-const TastingCheckbox = ({ wineId, tastingRecord, onTasteChange, status }) => {
-    const isChecked = tastingRecord[wineId] === status;
-    const handleChange = () => onTasteChange(wineId, isChecked ? null : status);
+// Welcome Popup Component
+const WelcomePopup = ({ isOpen, onClose }) => {
+    const [dontShowAgain, setDontShowAgain] = useState(false);
+    
+    const handleClose = () => {
+        if (dontShowAgain) {
+            localStorage.setItem('hideWelcomePopup', 'true');
+        }
+        onClose();
+    };
+
+    if (!isOpen) return null;
+
     return (
-        <label className="flex items-center space-x-2 cursor-pointer text-gray-500 hover:text-gray-900">
-            <input type="checkbox" checked={isChecked} onChange={handleChange} className="h-4 w-4 rounded bg-gray-200 border-gray-300 text-[#8c0004] focus:ring-[#8c0004] focus:ring-opacity-50" />
-            <span>{status === 'tasted' ? 'I have tasted this' : 'I want to taste this'}</span>
-        </label>
+        <div className="welcome-popup-overlay">
+            <div className="welcome-popup-backdrop" onClick={handleClose} />
+            <div className="welcome-popup-content">
+                <button onClick={handleClose} className="welcome-popup-close">
+                    <Icons.X className="icon-close" />
+                </button>
+                
+                <div className="welcome-popup-header">
+                    <div className="welcome-popup-logo">
+                        <img src={process.env.PUBLIC_URL + '/logo.png'} alt="Wine Spectator Logo" />
+                    </div>
+                    <h2>About The Top 100</h2>
+                </div>
+                
+                <div className="welcome-popup-body">
+                    <p>
+                        Each year since 1988, <em>Wine Spectator</em> has released its Top 100 list, where our editors select the most exciting wines from the thousands we reviewed during the course of the year. These wines are a diverse group—ranging from emerging labels and regions to traditional estates exploring new directions—and all generate the excitement we call the "X-factor."
+                    </p>
+                    
+                    <p>
+                        In addition, our selection also prioritizes quality (based on score), value (based on price) and availability (based on the number of cases either made or imported into the United States). These criteria are applied to the wines that rated outstanding (90 points or higher on <em>Wine Spectator</em>'s 100-point scale) each year to determine our Top 100.
+                    </p>
+                    
+                    <p>
+                        As many wines are made in limited quantities and not available in every market, our Top 100 is not a "shopping list," but rather a guide to wineries to watch in the future—a reflection of the producers and wines our editors become particularly passionate about in each new year.
+                    </p>
+                </div>
+                
+                <div className="welcome-popup-footer">
+                    <label className="welcome-popup-checkbox">
+                        <input 
+                            type="checkbox" 
+                            checked={dontShowAgain}
+                            onChange={(e) => setDontShowAgain(e.target.checked)}
+                        />
+                        <span>Don't show me again</span>
+                    </label>
+                    
+                    <button onClick={handleClose} className="btn-modern">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
     );
 };
 
-// Export functionality
+// Export Button Component
 const ExportButton = ({ tastingRecord, wines }) => {
+    const [showMenu, setShowMenu] = useState(false);
+    
     const exportTastingList = (format) => {
         const data = Object.entries(tastingRecord).map(([wineId, status]) => {
             const wine = wines.find(w => w.id === parseInt(wineId));
@@ -193,7 +234,6 @@ const ExportButton = ({ tastingRecord, wines }) => {
         });
 
         if (format === 'csv') {
-            // Convert to CSV
             const csv = [
                 Object.keys(data[0]).join(','),
                 ...data.map(row => Object.values(row).map(v => `"${v}"`).join(','))
@@ -207,7 +247,6 @@ const ExportButton = ({ tastingRecord, wines }) => {
             a.click();
             URL.revokeObjectURL(url);
         } else if (format === 'json') {
-            // Export as JSON
             const json = JSON.stringify(data, null, 2);
             const blob = new Blob([json], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -219,53 +258,75 @@ const ExportButton = ({ tastingRecord, wines }) => {
         }
 
         trackExport(format, data.length);
+        setShowMenu(false);
     };
 
     const itemCount = Object.keys(tastingRecord).length;
-
     if (itemCount === 0) return null;
 
     return (
-        <div className="relative inline-block">
+        <div className="export-button-container">
             <button 
-                className="btn-modern flex items-center gap-2"
-                onClick={() => document.getElementById('export-menu').classList.toggle('hidden')}
+                className="btn-modern export-button"
+                onClick={() => setShowMenu(!showMenu)}
             >
-                <Icons.Download className="w-4 h-4" />
+                <Icons.Download className="export-icon" />
                 Export List ({itemCount})
             </button>
-            <div id="export-menu" className="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
-                <button 
-                    onClick={() => { exportTastingList('csv'); document.getElementById('export-menu').classList.add('hidden'); }}
-                    className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-t-lg"
-                >
-                    Export as CSV
-                </button>
-                <button 
-                    onClick={() => { exportTastingList('json'); document.getElementById('export-menu').classList.add('hidden'); }}
-                    className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-b-lg"
-                >
-                    Export as JSON
-                </button>
-            </div>
+            {showMenu && (
+                <div className="export-menu">
+                    <button 
+                        onClick={() => exportTastingList('csv')}
+                        className="export-menu-item"
+                    >
+                        Export as CSV
+                    </button>
+                    <button 
+                        onClick={() => exportTastingList('json')}
+                        className="export-menu-item"
+                    >
+                        Export as JSON
+                    </button>
+                </div>
+            )}
         </div>
     );
 };
 
+const TastingCheckbox = ({ wineId, tastingRecord, onTasteChange, status }) => {
+    const isChecked = tastingRecord[wineId] === status;
+    const handleChange = () => onTasteChange(wineId, isChecked ? null : status);
+    
+    return (
+        <label className="tasting-checkbox">
+            <input 
+                type="checkbox" 
+                checked={isChecked} 
+                onChange={handleChange} 
+            />
+            <span>{status === 'tasted' ? 'I have tasted this' : 'I want to taste this'}</span>
+        </label>
+    );
+};
+
 const TastingRecordSummary = ({ tastingRecord, wines }) => {
-    const counts = useMemo(() => Object.values(tastingRecord).reduce((acc, status) => {
-        if (status === 'tasted') acc.tasted += 1;
-        if (status === 'want') acc.want += 1;
-        return acc;
-    }, { tasted: 0, want: 0 }), [tastingRecord]);
+    const counts = useMemo(() => {
+        return Object.values(tastingRecord).reduce((acc, status) => {
+            if (status === 'tasted') acc.tasted += 1;
+            if (status === 'want') acc.want += 1;
+            return acc;
+        }, { tasted: 0, want: 0 });
+    }, [tastingRecord]);
 
     return (
-        <div className="bg-white border border-gray-200 shadow-sm py-4 px-6 text-center rounded-xl max-w-2xl mx-auto mb-16 reveal">
-            <h3 className="text-xl text-gray-900 mb-2">Track Your Tasting Record</h3>
-            <p className="text-lg mb-4">
-                <span className="text-gray-900 font-bold">Tasted: </span><span className="text-[#8c0004] font-bold">{counts.tasted}</span>
-                <span className="text-gray-400 mx-2">—</span>
-                <span className="text-gray-900 font-bold">Want to Taste: </span><span className="text-[#8c0004] font-bold">{counts.want}</span>
+        <div className="tasting-summary reveal">
+            <h3>Track Your Tasting Record</h3>
+            <p className="tasting-counts">
+                <span className="count-label">Tasted: </span>
+                <span className="count-value">{counts.tasted}</span>
+                <span className="count-separator">—</span>
+                <span className="count-label">Want to Taste: </span>
+                <span className="count-value">{counts.want}</span>
             </p>
             <ExportButton tastingRecord={tastingRecord} wines={wines} />
         </div>
@@ -274,72 +335,104 @@ const TastingRecordSummary = ({ tastingRecord, wines }) => {
 
 const Pagination = ({ winesPerPage, totalWines, paginate, currentPage }) => {
     const pageNumbers = [];
-    for (let i = 1; i <= Math.ceil(totalWines / winesPerPage); i++) { pageNumbers.push(i); }
+    for (let i = 1; i <= Math.ceil(totalWines / winesPerPage); i++) {
+        pageNumbers.push(i);
+    }
+
     if (pageNumbers.length <= 1) return null;
+
     return (
-        <nav className="mt-12 py-8"><ul className="flex justify-center space-x-2">{pageNumbers.map(number => (
-            <li key={number}><button onClick={() => paginate(number)} className={`px-4 py-2 rounded-lg transition-colors duration-300 text-sm font-medium ${currentPage === number ? 'bg-[#8c0004] text-white shadow-md' : 'bg-white text-gray-700 hover:bg-gray-200 border border-gray-300'}`}>{number}</button></li>
-        ))}</ul></nav>
+        <nav className="pagination">
+            <ul>
+                {pageNumbers.map(number => (
+                    <li key={number}>
+                        <button 
+                            onClick={() => paginate(number)} 
+                            className={currentPage === number ? 'active' : ''}
+                        >
+                            {number}
+                        </button>
+                    </li>
+                ))}
+            </ul>
+        </nav>
     );
 };
 
 const WineCard = ({ wine, onSelect, tastingRecord, onTasteChange, isCondensed }) => {
     const getRankColor = (rank) => {
-        if (rank === 1) return 'bg-yellow-400 text-black';
-        if (rank === 2) return 'bg-gray-300 text-black';
-        if (rank === 3) return 'bg-orange-400 text-white';
-        return 'bg-[#8c0004] text-white';
+        if (rank === 1) return 'rank-gold';
+        if (rank === 2) return 'rank-silver';
+        if (rank === 3) return 'rank-bronze';
+        return 'rank-default';
     };
+
     const getTypeColor = (type) => {
         const typeLower = (type || '').toLowerCase();
-        if (typeLower.includes('red')) return 'bg-red-100 text-red-800';
-        if (typeLower.includes('white')) return 'bg-yellow-100 text-yellow-800';
-        if (typeLower.includes('sparkling')) return 'bg-blue-100 text-blue-800';
-        if (typeLower.includes('rosé')) return 'bg-pink-100 text-pink-800';
-        return 'bg-gray-100 text-gray-600';
+        if (typeLower.includes('red')) return 'type-red';
+        if (typeLower.includes('white')) return 'type-white';
+        if (typeLower.includes('sparkling')) return 'type-sparkling';
+        if (typeLower.includes('rosé')) return 'type-rose';
+        return 'type-default';
     };
 
     if (isCondensed) {
         return (
-            <div className="wine-card-condensed flex items-center gap-4 cursor-pointer" onClick={() => onSelect(wine)}>
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${getRankColor(wine.rank)}`}>{wine.rank}</div>
-                <div className="w-12 h-20 flex items-center justify-center flex-shrink-0">
-                    <LazyImage src={wine.image} alt={wine.name} className="h-full w-auto" />
+            <div className="wine-card-condensed" onClick={() => onSelect(wine)}>
+                <div className={`wine-rank ${getRankColor(wine.rank)}`}>{wine.rank}</div>
+                <div className="wine-image-condensed">
+                    <LazyImage src={wine.image} alt={wine.name} className="wine-bottle-image" />
                 </div>
-                <div className="flex-grow min-w-0"><h3 className="font-bold text-gray-900 truncate">{wine.name}</h3><p className="text-sm text-gray-500 truncate">{wine.winery}</p></div>
-                <div className="flex items-center gap-4 flex-shrink-0 ml-auto">
-                    <div className="text-right"><div className="text-lg font-bold text-gray-800">{wine.score}</div><div className="text-xs text-gray-500">points</div></div>
-                    <div className="text-xl font-bold text-[#8c0004]">${wine.price}</div>
+                <div className="wine-info-condensed">
+                    <h3>{wine.name}</h3>
+                    <p>{wine.winery}</p>
+                </div>
+                <div className="wine-details-condensed">
+                    <div className="wine-score">
+                        <div className="score-value">{wine.score}</div>
+                        <div className="score-label">points</div>
+                    </div>
+                    <div className="wine-price">${wine.price}</div>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="wine-card-modern group flex flex-col">
-            <div className={`absolute top-4 left-4 w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold ${getRankColor(wine.rank)} z-10 shadow-lg`}>{wine.rank}</div>
-            <div className="relative h-64 shrink-0 bg-gray-50 rounded-t-lg flex items-center justify-center p-4 cursor-pointer" onClick={() => onSelect(wine)}>
+        <div className="wine-card-modern">
+            <div className={`wine-rank ${getRankColor(wine.rank)}`}>{wine.rank}</div>
+            <div className="wine-image" onClick={() => onSelect(wine)}>
                 {wine.image ? (
                     <LazyImage 
                         src={wine.image} 
                         alt={`Bottle of ${wine.name}`} 
-                        className="h-full group-hover:scale-105 transition-transform duration-300" 
+                        className="wine-bottle-image" 
                     />
                 ) : (
-                    <Icons.Wine className="w-24 h-24 text-gray-300" />
+                    <Icons.Wine className="wine-placeholder" />
                 )}
             </div>
-            <div className="p-6 flex flex-col flex-grow">
+            <div className="wine-content">
                 <div>
-                    <h3 className="h-24 text-xl font-bold text-gray-900 mb-1 group-hover:text-[#8c0004] transition-colors duration-300 cursor-pointer" onClick={() => onSelect(wine)}>{wine.name}</h3>
-                    <p className="h-12 text-gray-500 cursor-pointer" onClick={() => onSelect(wine)}>{wine.winery}</p>
+                    <h3 onClick={() => onSelect(wine)}>{wine.name}</h3>
+                    <p className="wine-winery" onClick={() => onSelect(wine)}>{wine.winery}</p>
                 </div>
-                <div className="mt-auto">
-                    <div className="flex flex-wrap gap-2 mt-4"><span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">{wine.vintage}</span><span className={`px-3 py-1 rounded-full text-xs font-medium ${getTypeColor(wine.type)}`}>{wine.type}</span><span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">{wine.region}</span></div>
-                    <div className="space-y-2 mt-4 pt-4 border-t border-gray-200"><TastingCheckbox wineId={wine.id} tastingRecord={tastingRecord} onTasteChange={onTasteChange} status="tasted" /><TastingCheckbox wineId={wine.id} tastingRecord={tastingRecord} onTasteChange={onTasteChange} status="want" /></div>
-                    <div className="flex items-end justify-between pt-6 mt-4 border-t border-gray-200">
-                        <div><span className="text-2xl font-bold text-gray-800">${wine.price}</span><span className="ml-4 text-lg text-gray-500">{wine.score} pts</span></div>
-                        <button className="btn-modern text-sm" onClick={() => onSelect(wine)}>View Details</button>
+                <div className="wine-metadata">
+                    <div className="wine-tags">
+                        <span className="wine-tag">{wine.vintage}</span>
+                        <span className={`wine-tag ${getTypeColor(wine.type)}`}>{wine.type}</span>
+                        <span className="wine-tag">{wine.region}</span>
+                    </div>
+                    <div className="tasting-options">
+                        <TastingCheckbox wineId={wine.id} tastingRecord={tastingRecord} onTasteChange={onTasteChange} status="tasted" />
+                        <TastingCheckbox wineId={wine.id} tastingRecord={tastingRecord} onTasteChange={onTasteChange} status="want" />
+                    </div>
+                    <div className="wine-footer">
+                        <div>
+                            <span className="wine-price-large">${wine.price}</span>
+                            <span className="wine-score-inline">{wine.score} pts</span>
+                        </div>
+                        <button className="btn-modern btn-small" onClick={() => onSelect(wine)}>View Details</button>
                     </div>
                 </div>
             </div>
@@ -355,30 +448,40 @@ const WineDetailModal = ({ wine, isOpen, onClose, tastingRecord, onTasteChange }
     }, [isOpen, wine]);
 
     if (!isOpen || !wine) return null;
+
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl flex flex-col overflow-hidden shadow-2xl">
-                <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors z-50"><Icons.X className="w-6 h-6 text-gray-800" /></button>
-                <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8 overflow-y-auto">
-                    <div className="flex items-center justify-center bg-gray-100 rounded-lg p-4 h-96">
+        <div className="modal-overlay">
+            <div className="modal-backdrop" onClick={onClose} />
+            <div className="modal-content wine-detail-modal">
+                <button onClick={onClose} className="modal-close">
+                    <Icons.X className="icon-close" />
+                </button>
+                <div className="wine-detail-grid">
+                    <div className="wine-detail-image">
                         {wine.image ? (
-                            <img src={wine.image} alt={`Bottle of ${wine.name}`} className="max-h-full object-contain" />
+                            <img src={wine.image} alt={`Bottle of ${wine.name}`} />
                         ) : (
-                            <Icons.Wine className="w-32 h-32 text-gray-400" />
+                            <Icons.Wine className="wine-placeholder-large" />
                         )}
                     </div>
-                    <div className="flex flex-col">
-                        <h2 className="text-4xl font-bold text-gray-900 mb-2">{wine.name}</h2>
-                        <p className="text-xl text-gray-500 mb-4">{wine.winery} • {wine.vintage}</p>
-                        <div className="flex flex-wrap gap-2 mb-6"><span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-700">{wine.country}</span><span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-700">{wine.region}</span><span className={`px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800`}>{wine.type}</span></div>
-                        <h4 className="text-lg font-semibold text-gray-800 mt-6 mb-2">Tasting Note</h4>
-                        <p className="text-gray-700 text-base leading-relaxed mb-6">{wine.description}</p>
-                        <div className="space-y-2 p-4 rounded-lg bg-gray-50 border border-gray-200 mt-auto">
+                    <div className="wine-detail-info">
+                        <h2>{wine.name}</h2>
+                        <p className="wine-subtitle">{wine.winery} • {wine.vintage}</p>
+                        <div className="wine-tags">
+                            <span className="wine-tag">{wine.country}</span>
+                            <span className="wine-tag">{wine.region}</span>
+                            <span className="wine-tag type-tag">{wine.type}</span>
+                        </div>
+                        <h4>Tasting Note</h4>
+                        <p className="wine-description">{wine.description}</p>
+                        <div className="tasting-section">
                             <TastingCheckbox wineId={wine.id} tastingRecord={tastingRecord} onTasteChange={onTasteChange} status="tasted" />
                             <TastingCheckbox wineId={wine.id} tastingRecord={tastingRecord} onTasteChange={onTasteChange} status="want" />
                         </div>
-                        <div className="mt-6 pt-6 border-t border-gray-200 flex items-center justify-between"><span className="text-3xl font-bold text-[#8c0004]">${wine.price}</span><span className="text-xl text-gray-600 font-medium">{wine.score} Points</span></div>
+                        <div className="wine-detail-footer">
+                            <span className="wine-price-xl">${wine.price}</span>
+                            <span className="wine-score-xl">{wine.score} Points</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -386,7 +489,7 @@ const WineDetailModal = ({ wine, isOpen, onClose, tastingRecord, onTasteChange }
     );
 };
 
-// AI Assistant Component (Final Conversational Version)
+// AI Assistant Component
 const AIAssistant = ({ wines }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [input, setInput] = useState('');
@@ -413,10 +516,10 @@ const AIAssistant = ({ wines }) => {
 
         trackEvent('ai_chat_message', { message_type: 'user' });
 
-        // Create a concise history for context
-        const history = newMessages.slice(-6).map(msg => `${msg.role === 'user' ? 'User' : 'Dr. Vinny'}: ${msg.content}`).join('\n');
+        const history = newMessages.slice(-6).map(msg => 
+            `${msg.role === 'user' ? 'User' : 'Dr. Vinny'}: ${msg.content}`
+        ).join('\n');
 
-        // Construct a single, self-contained prompt for each request
         const fullPrompt = `You are an expert AI Wine Sommelier for Wine Spectator named Dr. Vinny. 
         Your knowledge is strictly limited to the provided JSON data about the Top 100 wines. 
         Answer the user's question based on this data. Be friendly, helpful, and concise.
@@ -441,7 +544,10 @@ const AIAssistant = ({ wines }) => {
             trackEvent('ai_chat_message', { message_type: 'assistant' });
         } catch (error) {
             console.error("Gemini API Error:", error);
-            setMessages(prev => [...prev, { role: 'assistant', content: "I'm sorry, an error occurred with the API request. Please ensure your API key is valid and has no restrictions." }]);
+            setMessages(prev => [...prev, { 
+                role: 'assistant', 
+                content: "I'm sorry, an error occurred with the API request. Please ensure your API key is valid and has no restrictions." 
+            }]);
         } finally {
             setIsTyping(false);
         }
@@ -460,30 +566,42 @@ const AIAssistant = ({ wines }) => {
     return (
         <Fragment>
             <button onClick={() => setIsOpen(!isOpen)} className="ai-assistant-btn">
-                <img src={process.env.PUBLIC_URL + '/vinny.png'} alt="Dr. Vinny AI Sommelier" className="w-full h-full object-cover rounded-full" />
+                <img src={process.env.PUBLIC_URL + '/vinny.png'} alt="Dr. Vinny AI Sommelier" />
             </button>
             {isOpen && (
                 <div className="ai-chat-window">
-                    <div className="ai-chat-header flex items-center justify-between"><h3 className="text-gray-900 font-semibold">Dr. Vinny</h3><button onClick={() => setIsOpen(false)} className="p-1"><Icons.X className="w-5 h-5 text-gray-500" /></button></div>
+                    <div className="ai-chat-header">
+                        <h3>Dr. Vinny</h3>
+                        <button onClick={() => setIsOpen(false)} className="ai-close-btn">
+                            <Icons.X className="icon-small" />
+                        </button>
+                    </div>
                     <div className="ai-chat-messages">
                         {messages.map((message, index) => (
                             <div key={index} className={`ai-message ${message.role}`}>
-                                <p className="leading-relaxed" dangerouslySetInnerHTML={{ __html: message.content.replace(/\n/g, '<br />') }} />
+                                <p dangerouslySetInnerHTML={{ __html: message.content.replace(/\n/g, '<br />') }} />
                             </div>
                         ))}
                         {isTyping && (
                             <div className="ai-message assistant">
-                                <div className="flex gap-1 items-center justify-center p-2">
-                                    <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
-                                    <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></span>
-                                    <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                                <div className="typing-indicator">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
                                 </div>
                             </div>
                         )}
                         <div ref={messagesEndRef} />
                     </div>
                     <div className="ai-chat-input">
-                        <input type="text" placeholder="Ask about pairings, regions, etc..." value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={handleKeyPress} disabled={isTyping} />
+                        <input 
+                            type="text" 
+                            placeholder="Ask about pairings, regions, etc..." 
+                            value={input} 
+                            onChange={(e) => setInput(e.target.value)} 
+                            onKeyPress={handleKeyPress} 
+                            disabled={isTyping} 
+                        />
                     </div>
                 </div>
             )}
@@ -493,6 +611,7 @@ const AIAssistant = ({ wines }) => {
 
 const Navigation = () => {
     const [scrolled, setScrolled] = useState(false);
+    
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 20);
         window.addEventListener('scroll', handleScroll);
@@ -500,19 +619,18 @@ const Navigation = () => {
     }, []);
 
     return (
-        <nav className={`navbar-modern ${scrolled ? 'scrolled' : ''}`} style={!scrolled ? { textShadow: '0 2px 4px rgba(0,0,0,0.3)' } : {}}>
-            <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
+        <nav className={`navbar-modern ${scrolled ? 'scrolled' : ''}`}>
+            <div className="navbar-container">
                 <a href="/">
                     <img 
                         src={process.env.PUBLIC_URL + (scrolled ? '/logo-black.png' : '/logo.png')} 
                         alt="Wine Spectator Logo" 
-                        className="h-8 md:h-10 transition-all duration-300" 
-                        style={!scrolled ? { filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' } : {}}
+                        className="navbar-logo"
                     />
                 </a>
-                <div className="hidden md:flex items-center gap-8 font-medium">
-                    <a href="#wines" className={`transition-colors ${scrolled ? 'text-gray-700 hover:text-[#8c0004]' : 'text-white hover:text-gray-200'}`}>Top 100</a>
-                    <button className={`btn-modern ${!scrolled ? 'shadow-lg' : ''}`}>Subscribe</button>
+                <div className="navbar-menu">
+                    <a href="#wines" className={scrolled ? 'nav-link-dark' : 'nav-link-light'}>Top 100</a>
+                    <button className="btn-modern">Subscribe</button>
                 </div>
             </div>
         </nav>
@@ -525,83 +643,16 @@ const Hero = () => (
         <video autoPlay loop muted playsInline className="hero-video">
             <source src={process.env.PUBLIC_URL + '/corks.mp4'} type="video/mp4" />
         </video>
-        <div className="relative z-10 text-center px-6">
-            <h1 className="text-5xl md:text-7xl font-bold text-white mb-4 stagger-in" style={{ textShadow: '0 3px 15px rgba(0,0,0,0.5)' }}>
-                <span className="block">Top 100</span>
-                <span className="block">Wines of 2024</span>
+        <div className="hero-content">
+            <h1 className="hero-title stagger-in">
+                <span className="hero-title-line">Top 100</span>
+                <span className="hero-title-line">Wines of 2024</span>
             </h1>
-            <p className="text-xl md:text-2xl text-white mb-8 stagger-in" style={{ animationDelay: '0.2s', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>A curated selection of the world's finest wines.</p>
-            <a href="#wines" className="btn-modern inline-block stagger-in" style={{ animationDelay: '0.4s' }}>Explore The List</a>
+            <p className="hero-subtitle stagger-in">A curated selection of the world's finest wines.</p>
+            <a href="#wines" className="btn-modern btn-hero stagger-in">Explore The List</a>
         </div>
     </section>
 );
-
-const WelcomePopup = ({ isOpen, onClose }) => {
-    const [dontShowAgain, setDontShowAgain] = useState(false);
-    
-    const handleClose = () => {
-        if (dontShowAgain) {
-            localStorage.setItem('hideWelcomePopup', 'true');
-        }
-        onClose();
-    };
-
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-[#8c0004] bg-opacity-70 backdrop-blur-sm" onClick={handleClose} />
-            <div className="relative bg-white rounded-2xl p-8 shadow-2xl max-w-2xl">
-                <button 
-                    onClick={handleClose} 
-                    className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-                >
-                    <Icons.X className="w-6 h-6 text-gray-800" />
-                </button>
-                
-                <div className="text-center mb-6">
-                    <div className="bg-[#8c0004] px-6 py-3 rounded-lg inline-block mb-4">
-                        <img src={process.env.PUBLIC_URL + '/logo.png'} alt="Wine Spectator Logo" className="h-10" />
-                    </div>
-                    <h2 className="text-3xl font-bold text-gray-900">About The Top 100</h2>
-                </div>
-                
-                <div className="space-y-4 text-gray-700">
-                    <p>
-                        Each year since 1988, <em>Wine Spectator</em> has released its Top 100 list, where our editors select the most exciting wines from the thousands we reviewed during the course of the year. These wines are a diverse group—ranging from emerging labels and regions to traditional estates exploring new directions—and all generate the excitement we call the "X-factor."
-                    </p>
-                    
-                    <p>
-                        In addition, our selection also prioritizes quality (based on score), value (based on price) and availability (based on the number of cases either made or imported into the United States). These criteria are applied to the wines that rated outstanding (90 points or higher on <em>Wine Spectator</em>'s 100-point scale) each year to determine our Top 100.
-                    </p>
-                    
-                    <p>
-                        As many wines are made in limited quantities and not available in every market, our Top 100 is not a "shopping list," but rather a guide to wineries to watch in the future—a reflection of the producers and wines our editors become particularly passionate about in each new year.
-                    </p>
-                </div>
-                
-                <div className="mt-8 flex items-center justify-between">
-                    <label className="flex items-center space-x-2 cursor-pointer text-gray-600">
-                        <input 
-                            type="checkbox" 
-                            checked={dontShowAgain}
-                            onChange={(e) => setDontShowAgain(e.target.checked)}
-                            className="h-4 w-4 rounded bg-gray-200 border-gray-300 text-[#8c0004] focus:ring-[#8c0004]"
-                        />
-                        <span>Don't show me again</span>
-                    </label>
-                    
-                    <button 
-                        onClick={handleClose}
-                        className="btn-modern"
-                    >
-                        Close
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 const FilterBar = ({ filters, onFiltersChange, isCondensed, onViewChange }) => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -612,7 +663,6 @@ const FilterBar = ({ filters, onFiltersChange, isCondensed, onViewChange }) => {
         setSearchTerm(value);
         onFiltersChange({ ...filters, search: value });
         
-        // Track search after user stops typing
         if (value) {
             setTimeout(() => {
                 const results = wines.filter(wine => 
@@ -630,34 +680,76 @@ const FilterBar = ({ filters, onFiltersChange, isCondensed, onViewChange }) => {
     };
 
     return (
-        <div className="bg-white/70 backdrop-blur-md p-4 rounded-xl border border-gray-200 mb-12 sticky top-20 z-20 shadow-sm">
-            <div className="flex flex-col md:flex-row gap-4">
-                <div className="relative flex-grow">
-                    <Icons.Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input type="text" placeholder="Search wines..." value={searchTerm} onChange={(e) => handleSearch(e.target.value)} className="w-full pl-12 pr-4 py-3 bg-gray-100 border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#8c0004]"/>
+        <div className="filter-bar">
+            <div className="filter-row">
+                <div className="search-container">
+                    <Icons.Search className="search-icon" />
+                    <input 
+                        type="text" 
+                        placeholder="Search wines..." 
+                        value={searchTerm} 
+                        onChange={(e) => handleSearch(e.target.value)} 
+                        className="search-input"
+                    />
                 </div>
-                <div className="flex items-center gap-2">
-                    <button onClick={() => { onViewChange(false); trackEvent('view_mode_changed', { mode: 'grid' }); }} className={`p-3 rounded-lg transition-all ${!isCondensed ? 'bg-[#8c0004] text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}><Icons.Grid className="w-5 h-5" /></button>
-                    <button onClick={() => { onViewChange(true); trackEvent('view_mode_changed', { mode: 'list' }); }} className={`p-3 rounded-lg transition-all ${isCondensed ? 'bg-[#8c0004] text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}><Icons.List className="w-5 h-5" /></button>
+                <div className="view-toggle">
+                    <button 
+                        onClick={() => { onViewChange(false); trackEvent('view_mode_changed', { mode: 'grid' }); }} 
+                        className={!isCondensed ? 'view-btn active' : 'view-btn'}
+                    >
+                        <Icons.Grid className="view-icon" />
+                    </button>
+                    <button 
+                        onClick={() => { onViewChange(true); trackEvent('view_mode_changed', { mode: 'list' }); }} 
+                        className={isCondensed ? 'view-btn active' : 'view-btn'}
+                    >
+                        <Icons.List className="view-icon" />
+                    </button>
                 </div>
             </div>
-            <div className="mt-4"><p className="text-gray-600 text-sm mb-2 font-medium">Wine Type</p><div className="flex flex-wrap gap-2">{['All', ...allTypes].map(type => (<button key={type} onClick={() => handleFilterChange('type', type)} className={`px-3 py-1 text-sm rounded-lg ${filters.type === type ? 'bg-[#8c0004] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>{type}</button>))}</div></div>
-            <div className="mt-4"><p className="text-gray-600 text-sm mb-2 font-medium">Country</p><div className="flex flex-wrap gap-2">{['All', ...allCountries].map(country => (<button key={country} onClick={() => handleFilterChange('country', country)} className={`px-3 py-1 text-sm rounded-lg ${filters.country === country ? 'bg-[#8c0004] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>{country}</button>))}</div></div>
+            <div className="filter-section">
+                <p className="filter-label">Wine Type</p>
+                <div className="filter-buttons">
+                    {['All', ...allTypes].map(type => (
+                        <button 
+                            key={type} 
+                            onClick={() => handleFilterChange('type', type)} 
+                            className={filters.type === type ? 'filter-btn active' : 'filter-btn'}
+                        >
+                            {type}
+                        </button>
+                    ))}
+                </div>
+            </div>
+            <div className="filter-section">
+                <p className="filter-label">Country</p>
+                <div className="filter-buttons">
+                    {['All', ...allCountries].map(country => (
+                        <button 
+                            key={country} 
+                            onClick={() => handleFilterChange('country', country)} 
+                            className={filters.country === country ? 'filter-btn active' : 'filter-btn'}
+                        >
+                            {country}
+                        </button>
+                    ))}
+                </div>
+            </div>
         </div>
     );
 };
 
 const Footer = () => (
-    <footer className="py-12 px-6 bg-[#8c0004] text-red-100">
-        <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
-                <div className="space-y-4">
-                     <img src={process.env.PUBLIC_URL + '/logo.png'} alt="Wine Spectator Logo" className="h-8" />
+    <footer className="footer">
+        <div className="footer-container">
+            <div className="footer-grid">
+                <div className="footer-section">
+                    <img src={process.env.PUBLIC_URL + '/logo.png'} alt="Wine Spectator Logo" className="footer-logo" />
                     <p>Curating the world's finest wines since 1976.</p>
                 </div>
-                <div>
-                    <h4 className="text-white font-semibold mb-4">Follow Us</h4>
-                    <div className="flex space-x-3">
+                <div className="footer-section">
+                    <h4>Follow Us</h4>
+                    <div className="social-links">
                         <a href="https://twitter.com/WineSpectator" target="_blank" rel="noopener noreferrer" className="social-icon-container">
                             <img src={process.env.PUBLIC_URL + '/X.png'} alt="X Social Icon" className="social-icon" />
                         </a>
@@ -669,23 +761,23 @@ const Footer = () => (
                         </a>
                     </div>
                 </div>
-                <div>
-                    <h4 className="text-white font-semibold mb-4">Resources</h4>
-                    <ul className="space-y-2">
-                        <li><a href="https://www.wine.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Wine.com</a></li>
-                        <li><a href="https://www.winespectator.com/vintage-charts" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Vintage Charts</a></li>
+                <div className="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="https://www.wine.com" target="_blank" rel="noopener noreferrer">Wine.com</a></li>
+                        <li><a href="https://www.winespectator.com/vintage-charts" target="_blank" rel="noopener noreferrer">Vintage Charts</a></li>
                     </ul>
                 </div>
-                <div>
-                    <h4 className="text-white font-semibold mb-4">Stay Updated</h4>
-                    <p className="mb-4">Subscribe to our newsletter.</p>
-                    <div className="flex">
-                        <input type="email" placeholder="Your email" className="w-full px-4 py-2 bg-white/20 border-white/30 rounded-l-md text-white placeholder-red-100 focus:outline-none focus:ring-2 focus:ring-white" />
-                        <button className="btn-modern bg-black/20 rounded-l-none">Subscribe</button>
+                <div className="footer-section">
+                    <h4>Stay Updated</h4>
+                    <p>Subscribe to our newsletter.</p>
+                    <div className="newsletter-form">
+                        <input type="email" placeholder="Your email" />
+                        <button className="btn-modern btn-newsletter">Subscribe</button>
                     </div>
                 </div>
             </div>
-            <div className="pt-8 border-t border-white/20 text-center">
+            <div className="footer-bottom">
                 <p>© {new Date().getFullYear()} Wine Spectator. All rights reserved.</p>
             </div>
         </div>
@@ -698,12 +790,17 @@ const App = () => {
     const [isCondensed, setIsCondensed] = useState(false);
     const [showWelcomePopup, setShowWelcomePopup] = useState(false);
     const [tastingRecord, setTastingRecord] = useState(() => {
-        try { const savedRecord = localStorage.getItem('tastingRecord'); return savedRecord ? JSON.parse(savedRecord) : {}; } catch (error) { return {}; }
+        try {
+            const savedRecord = localStorage.getItem('tastingRecord');
+            return savedRecord ? JSON.parse(savedRecord) : {};
+        } catch (error) {
+            return {};
+        }
     });
     const [currentPage, setCurrentPage] = useState(1);
     const winesPerPage = 12;
 
-    // Initialize analytics and PWA
+    // Initialize
     useEffect(() => {
         // Check if welcome popup should be shown
         const hidePopup = localStorage.getItem('hideWelcomePopup');
@@ -711,25 +808,17 @@ const App = () => {
             setShowWelcomePopup(true);
         }
 
-        // Initialize scroll tracking
-        initScrollTracking();
-
-        // Register service worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
-                    .then(reg => console.log('Service Worker registered'))
-                    .catch(err => console.log('Service Worker registration failed'));
-            });
-        }
-
         // Track page view
         trackEvent('page_view', { page_title: 'Wine Top 100' });
     }, []);
 
-    useEffect(() => { localStorage.setItem('tastingRecord', JSON.stringify(tastingRecord)); }, [tastingRecord]);
+    useEffect(() => {
+        localStorage.setItem('tastingRecord', JSON.stringify(tastingRecord));
+    }, [tastingRecord]);
     
-    useEffect(() => { setCurrentPage(1); }, [filters]);
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filters]);
 
     const handleTasteChange = (wineId, status) => {
         const wine = wines.find(w => w.id === wineId);
@@ -739,19 +828,27 @@ const App = () => {
         
         setTastingRecord(prevRecord => {
             const newRecord = { ...prevRecord };
-            if (status === null) { delete newRecord[wineId]; } else { newRecord[wineId] = status; }
+            if (status === null) {
+                delete newRecord[wineId];
+            } else {
+                newRecord[wineId] = status;
+            }
             return newRecord;
         });
     };
 
     useScrollAnimation();
 
-    const filteredWines = useMemo(() => wines.filter(wine => {
-        const matchesSearch = !filters.search || wine.name.toLowerCase().includes(filters.search.toLowerCase()) || (wine.winery && wine.winery.toLowerCase().includes(filters.search.toLowerCase()));
-        const matchesType = filters.type === 'All' || wine.type === filters.type;
-        const matchesCountry = filters.country === 'All' || wine.country === filters.country;
-        return matchesSearch && matchesType && matchesCountry;
-    }), [filters]);
+    const filteredWines = useMemo(() => {
+        return wines.filter(wine => {
+            const matchesSearch = !filters.search || 
+                wine.name.toLowerCase().includes(filters.search.toLowerCase()) || 
+                (wine.winery && wine.winery.toLowerCase().includes(filters.search.toLowerCase()));
+            const matchesType = filters.type === 'All' || wine.type === filters.type;
+            const matchesCountry = filters.country === 'All' || wine.country === filters.country;
+            return matchesSearch && matchesType && matchesCountry;
+        });
+    }, [filters]);
 
     const indexOfLastWine = currentPage * winesPerPage;
     const indexOfFirstWine = indexOfLastWine - winesPerPage;
@@ -772,35 +869,65 @@ const App = () => {
             <Navigation />
             <Hero />
             <main>
-                <section id="wines" className="py-20 px-6 bg-gray-50">
-                    <div className="max-w-7xl mx-auto">
+                <section id="wines" className="wines-section">
+                    <div className="container">
                         <TastingRecordSummary tastingRecord={tastingRecord} wines={wines} />
-                        <div className="text-center mb-16 reveal">
-                            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">The Collection</h2>
-                            <p className="text-xl text-gray-600">Discover extraordinary wines from renowned vineyards</p>
+                        <div className="section-header reveal">
+                            <h2>The Collection</h2>
+                            <p>Discover extraordinary wines from renowned vineyards</p>
                         </div>
-                        <FilterBar filters={filters} onFiltersChange={setFilters} isCondensed={isCondensed} onViewChange={setIsCondensed} />
-                        <div id="wine-list-container" className="mt-8">
+                        <FilterBar 
+                            filters={filters} 
+                            onFiltersChange={setFilters} 
+                            isCondensed={isCondensed} 
+                            onViewChange={setIsCondensed} 
+                        />
+                        <div id="wine-list-container" className="wine-list-container">
                             {isCondensed ? (
-                                <div className="space-y-2">
-                                    {currentWines.map((wine, index) => (
-                                        <WineCard key={wine.id} wine={wine} onSelect={setSelectedWine} isCondensed={true} tastingRecord={tastingRecord} onTasteChange={handleTasteChange} />
+                                <div className="wine-list-condensed">
+                                    {currentWines.map((wine) => (
+                                        <WineCard 
+                                            key={wine.id} 
+                                            wine={wine} 
+                                            onSelect={setSelectedWine} 
+                                            isCondensed={true} 
+                                            tastingRecord={tastingRecord} 
+                                            onTasteChange={handleTasteChange} 
+                                        />
                                     ))}
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                    {currentWines.map((wine, index) => (
-                                        <WineCard key={wine.id} wine={wine} onSelect={setSelectedWine} isCondensed={false} tastingRecord={tastingRecord} onTasteChange={handleTasteChange} />
+                                <div className="wine-grid">
+                                    {currentWines.map((wine) => (
+                                        <WineCard 
+                                            key={wine.id} 
+                                            wine={wine} 
+                                            onSelect={setSelectedWine} 
+                                            isCondensed={false} 
+                                            tastingRecord={tastingRecord} 
+                                            onTasteChange={handleTasteChange} 
+                                        />
                                     ))}
                                 </div>
                             )}
                         </div>
-                        <Pagination winesPerPage={winesPerPage} totalWines={filteredWines.length} paginate={paginate} currentPage={currentPage} />
+                        <Pagination 
+                            winesPerPage={winesPerPage} 
+                            totalWines={filteredWines.length} 
+                            paginate={paginate} 
+                            currentPage={currentPage} 
+                        />
                     </div>
                 </section>
             </main>
             <Footer />
-            <WineDetailModal wine={selectedWine} isOpen={!!selectedWine} onClose={() => setSelectedWine(null)} tastingRecord={tastingRecord} onTasteChange={handleTasteChange} />
+            <WineDetailModal 
+                wine={selectedWine} 
+                isOpen={!!selectedWine} 
+                onClose={() => setSelectedWine(null)} 
+                tastingRecord={tastingRecord} 
+                onTasteChange={handleTasteChange} 
+            />
             <AIAssistant wines={wines} />
             <WelcomePopup 
                 isOpen={showWelcomePopup} 
