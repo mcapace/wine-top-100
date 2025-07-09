@@ -1,12 +1,8 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "WS Top 100",
+  "name": "Wine Spectator Top 100 Wines",
+  "description": "Discover and track the world's finest wines from Wine Spectator's Top 100 list",
   "icons": [
-    {
-      "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
-    },
     {
       "src": "logo192.png",
       "type": "image/png",
@@ -20,6 +16,24 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#8c0004",
+  "background_color": "#ffffff",
+  "orientation": "portrait",
+  "categories": ["lifestyle", "food"],
+  "shortcuts": [
+    {
+      "name": "View Top 100",
+      "short_name": "Top 100",
+      "description": "View the complete Top 100 wines list",
+      "url": "/#wines",
+      "icons": [{ "src": "/logo192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Tasting List",
+      "short_name": "My List",
+      "description": "View your personal tasting list",
+      "url": "/#wines?filter=tasted",
+      "icons": [{ "src": "/logo192.png", "sizes": "192x192" }]
+    }
+  ]
 }
