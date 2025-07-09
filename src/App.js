@@ -10,34 +10,33 @@ const LazyImage = ({ src, alt, className, placeholderSrc = '/placeholder-wine.jp
     const imageRef = useRef(null);
 
     useEffect(() => {
-        const currentRef = imageRef.current; // Store ref value
+        let observer;
+        const currentElement = imageRef.current; // Store ref value
         
-        const observer = new IntersectionObserver(
-            entries => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const img = new Image();
-                        img.src = src;
-                        img.onload = () => {
-                            setImageSrc(src);
-                            setImageLoading(false);
-                        };
-                        if (currentRef) {
-                            observer.unobserve(currentRef);
+        if (currentElement) {
+            observer = new IntersectionObserver(
+                entries => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = new Image();
+                            img.src = src;
+                            img.onload = () => {
+                                setImageSrc(src);
+                                setImageLoading(false);
+                            };
+                            observer.unobserve(entry.target);
                         }
-                    }
-                });
-            },
-            { threshold: 0.1, rootMargin: '50px' }
-        );
+                    });
+                },
+                { threshold: 0.1, rootMargin: '50px' }
+            );
 
-        if (currentRef) {
-            observer.observe(currentRef);
+            observer.observe(currentElement);
         }
 
         return () => {
-            if (currentRef) {
-                observer.unobserve(currentRef); // Use stored ref
+            if (observer) {
+                observer.disconnect(); // Use disconnect instead
             }
         };
     }, [src, placeholderSrc]);
