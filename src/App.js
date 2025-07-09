@@ -290,27 +290,137 @@ const TastingCheckbox = ({ wineId, tastingRecord, onTasteChange, status }) => {
     );
 };
 
-const TastingRecordSummary = ({ tastingRecord, wines }) => {
-    const counts = useMemo(() => {
-        return Object.values(tastingRecord).reduce((acc, status) => {
-            if (status === 'tasted') acc.tasted += 1;
-            if (status === 'want') acc.want += 1;
-            return acc;
-        }, { tasted: 0, want: 0 });
-    }, [tastingRecord]);
+// Tasting Tracker Side Panel Component
+const TastingTrackerPanel = ({ isOpen, onToggle, tastingRecord, wines, onTasteChange }) => {
+    const tastedWines = [];
+    const wantToTasteWines = [];
+    
+    // Organize wines by status
+    Object.entries(tastingRecord).forEach(([wineId, status]) => {
+        const wine = wines.find(w => w.id === parseInt(wineId));
+        if (wine) {
+            if (status === 'tasted') {
+                tastedWines.push(wine);
+            } else if (status === 'want') {
+                wantToTasteWines.push(wine);
+            }
+        }
+    });
+
+    const totalCount = tastedWines.length + wantToTasteWines.length;
 
     return (
-        <div className="tasting-summary reveal">
-            <h3>Track Your Tasting Record</h3>
-            <p className="tasting-counts">
-                <span className="count-label">Tasted: </span>
-                <span className="count-value">{counts.tasted}</span>
-                <span className="count-separator">—</span>
-                <span className="count-label">Want to Taste: </span>
-                <span className="count-value">{counts.want}</span>
-            </p>
-            <ExportButton tastingRecord={tastingRecord} wines={wines} />
-        </div>
+        <>
+            {/* Fixed Tab Button */}
+            <button 
+                className={`tasting-tracker-tab ${isOpen ? 'tab-open' : ''}`}
+                onClick={onToggle}
+            >
+                <span className="tab-text">My Tastings</span>
+                <span className="tab-count">{totalCount}</span>
+            </button>
+
+            {/* Sliding Panel */}
+            <div className={`tasting-tracker-panel ${isOpen ? 'panel-open' : ''}`}>
+                <div className="panel-header">
+                    <h3>My Wine Journey</h3>
+                    <button onClick={onToggle} className="panel-close">
+                        <Icons.X className="icon-close" />
+                    </button>
+                </div>
+
+                <div className="panel-stats">
+                    <div className="stat-item">
+                        <span className="stat-number">{tastedWines.length}</span>
+                        <span className="stat-label">Tasted</span>
+                    </div>
+                    <div className="stat-divider"></div>
+                    <div className="stat-item">
+                        <span className="stat-number">{wantToTasteWines.length}</span>
+                        <span className="stat-label">Want to Taste</span>
+                    </div>
+                </div>
+
+                <div className="panel-content">
+                    {/* Tasted Section */}
+                    {tastedWines.length > 0 && (
+                        <div className="panel-section">
+                            <h4 className="section-title">Tasted Wines</h4>
+                            <div className="mini-wine-list">
+                                {tastedWines.map(wine => (
+                                    <div key={wine.id} className="mini-wine-card">
+                                        <img 
+                                            src={wine.image || '/placeholder-wine.jpg'} 
+                                            alt={wine.name}
+                                            className="mini-wine-image"
+                                        />
+                                        <div className="mini-wine-info">
+                                            <h5>{wine.name}</h5>
+                                            <p>{wine.winery}</p>
+                                            <span className="mini-wine-price">${wine.price}</span>
+                                        </div>
+                                        <button 
+                                            onClick={() => onTasteChange(wine.id, null)}
+                                            className="remove-btn"
+                                            title="Remove from list"
+                                        >
+                                            <Icons.X className="icon-small" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Want to Taste Section */}
+                    {wantToTasteWines.length > 0 && (
+                        <div className="panel-section">
+                            <h4 className="section-title">Want to Taste</h4>
+                            <div className="mini-wine-list">
+                                {wantToTasteWines.map(wine => (
+                                    <div key={wine.id} className="mini-wine-card">
+                                        <img 
+                                            src={wine.image || '/placeholder-wine.jpg'} 
+                                            alt={wine.name}
+                                            className="mini-wine-image"
+                                        />
+                                        <div className="mini-wine-info">
+                                            <h5>{wine.name}</h5>
+                                            <p>{wine.winery}</p>
+                                            <span className="mini-wine-price">${wine.price}</span>
+                                        </div>
+                                        <button 
+                                            onClick={() => onTasteChange(wine.id, null)}
+                                            className="remove-btn"
+                                            title="Remove from list"
+                                        >
+                                            <Icons.X className="icon-small" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {totalCount === 0 && (
+                        <div className="empty-state">
+                            <Icons.Wine className="empty-icon" />
+                            <p>Start tracking your wine journey!</p>
+                            <p className="empty-subtitle">Click the checkboxes on wine cards to add them to your list.</p>
+                        </div>
+                    )}
+                </div>
+
+                {totalCount > 0 && (
+                    <div className="panel-footer">
+                        <ExportButton tastingRecord={tastingRecord} wines={wines} />
+                    </div>
+                )}
+            </div>
+
+            {/* Backdrop */}
+            {isOpen && <div className="panel-backdrop" onClick={onToggle} />}
+        </>
     );
 };
 
@@ -770,6 +880,7 @@ const App = () => {
     const [filters, setFilters] = useState({ search: '', type: 'All', country: 'All' });
     const [isCondensed, setIsCondensed] = useState(false);
     const [showWelcomePopup, setShowWelcomePopup] = useState(false);
+    const [showTastingPanel, setShowTastingPanel] = useState(false);
     const [tastingRecord, setTastingRecord] = useState(() => {
         try {
             const savedRecord = localStorage.getItem('tastingRecord');
@@ -852,7 +963,7 @@ const App = () => {
             <main>
                 <section id="wines" className="wines-section">
                     <div className="container">
-                        <TastingRecordSummary tastingRecord={tastingRecord} wines={wines} />
+                        {/* NO OLD TASTING SUMMARY HERE! */}
                         <div className="section-header reveal">
                             <h2>The Collection</h2>
                             <p>Discover extraordinary wines from renowned vineyards</p>
@@ -890,7 +1001,7 @@ const App = () => {
                                         />
                                     ))}
                                 </div>
-                            )}https://github.com/mcapace/wine-top-100/blob/main/src/App.js
+                            )}
                         </div>
                         <Pagination 
                             winesPerPage={winesPerPage} 
@@ -913,6 +1024,13 @@ const App = () => {
             <WelcomePopup 
                 isOpen={showWelcomePopup} 
                 onClose={() => setShowWelcomePopup(false)} 
+            />
+            <TastingTrackerPanel 
+                isOpen={showTastingPanel}
+                onToggle={() => setShowTastingPanel(!showTastingPanel)}
+                tastingRecord={tastingRecord}
+                wines={wines}
+                onTasteChange={handleTasteChange}
             />
         </Fragment>
     );
