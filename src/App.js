@@ -3,34 +3,9 @@ import './App.css';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import winesData from './wines-2024.json';
 
-// Lazy Loading Image Component - SIMPLIFIED VERSION
-const LazyImage = ({ src, alt, className, placeholderSrc = '/placeholder-wine.jpg' }) => {
-    const [imageSrc, setImageSrc] = useState(placeholderSrc);
-    const [imageLoading, setImageLoading] = useState(true);
-
-    useEffect(() => {
-        const img = new Image();
-        img.src = src;
-        img.onload = () => {
-            setImageSrc(src);
-            setImageLoading(false);
-        };
-    }, [src]);
-
-    return (
-        <div className={className} style={{ position: 'relative' }}>
-            {imageLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-                    <div className="spinner"></div>
-                </div>
-            )}
-            <img 
-                src={imageSrc} 
-                alt={alt} 
-                className={`w-full h-full object-cover ${imageLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
-            />
-        </div>
-    );
+// Simple Image Component (no lazy loading)
+const LazyImage = ({ src, alt, className }) => {
+    return <img src={src} alt={alt} className={className} />;
 };
 
 // Analytics functions
