@@ -10,35 +10,37 @@ const LazyImage = ({ src, alt, className, placeholderSrc = `${process.env.PUBLIC
     const imageRef = useRef();
 
     useEffect(() => {
-        const observer = new IntersectionObserver(
-            entries => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const img = new Image();
-                        img.src = src;
-                        img.onload = () => {
-                            setImageSrc(src);
-                            setImageLoading(false);
-                        };
-                        if (imageRef.current) {
-                            observer.unobserve(imageRef.current);
-                        }
+    const currentImageRef = imageRef.current; // Store ref in a variable
+    
+    const observer = new IntersectionObserver(
+        entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = new Image();
+                    img.src = src;
+                    img.onload = () => {
+                        setImageSrc(src);
+                        setImageLoading(false);
+                    };
+                    if (currentImageRef) {
+                        observer.unobserve(currentImageRef);
                     }
-                });
-            },
-            { threshold: 0.1, rootMargin: '50px' }
-        );
+                }
+            });
+        },
+        { threshold: 0.1, rootMargin: '50px' }
+    );
 
-        if (imageRef.current) {
-            observer.observe(imageRef.current);
+    if (currentImageRef) {
+        observer.observe(currentImageRef);
+    }
+
+    return () => {
+        if (observer && currentImageRef) {
+            observer.unobserve(currentImageRef); // Use the variable, not imageRef.current
         }
-
-        return () => {
-            if (observer && imageRef.current) {
-                observer.unobserve(imageRef.current);
-            }
-        };
-    }, [src, placeholderSrc]);
+    };
+}, [src, placeholderSrc]);
 
     return (
         <div ref={imageRef} className={`lazy-image-container ${className}`}>
