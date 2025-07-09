@@ -4,9 +4,38 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import winesData from './wines-2024.json';
 
 // Simple Image Component (no lazy loading)
-const LazyImage = ({ src, alt, className }) => {
-    return <img src={src} alt={alt} className={className} />;
-};
+useEffect(() => {
+  const observer = new IntersectionObserver(
+    entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = new Image()
+          img.src = src
+          img.onload = () => {
+            setImageSrc(src)
+            setImageLoading(false)
+          }
+          observer.unobserve(ref)
+        }
+      })
+    },
+    { threshold: 0.1, rootMargin: '50px' }
+  )
+
+  // capture the current ref
+  const ref = imageRef.current
+  if (ref) {
+    observer.observe(ref)
+  }
+
+  return () => {
+    // clean up on that same ref
+    if (observer && ref) {
+      observer.unobserve(ref)
+    }
+  }
+}, [src, placeholderSrc])
+
 
 // Analytics functions
 const trackEvent = (eventName, parameters = {}) => {
