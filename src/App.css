@@ -61,6 +61,7 @@ body {
 .btn-modern.btn-small {
   padding: 8px 20px;
   font-size: 14px;
+  white-space: nowrap;
 }
 
 .btn-modern.btn-hero {
@@ -369,44 +370,6 @@ body {
 .section-header p {
   font-size: 1.25rem;
   color: #718096;
-}
-
-/* Tasting Summary */
-.tasting-summary {
-  background: white;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-  padding: 1rem 1.5rem;
-  text-align: center;
-  border-radius: 12px;
-  max-width: 672px;
-  margin: 0 auto 4rem;
-}
-
-.tasting-summary h3 {
-  font-size: 1.25rem;
-  color: #1a202c;
-  margin-bottom: 0.5rem;
-}
-
-.tasting-counts {
-  font-size: 1.125rem;
-  margin-bottom: 1rem;
-}
-
-.count-label {
-  color: #1a202c;
-  font-weight: bold;
-}
-
-.count-value {
-  color: #8c0004;
-  font-weight: bold;
-}
-
-.count-separator {
-  color: #cbd5e0;
-  margin: 0 0.5rem;
 }
 
 /* Export Button */
@@ -806,55 +769,34 @@ body {
   font-size: 0.875rem;
 }
 
+/* Wine Footer - Fixed Layout */
 .wine-footer {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   padding-top: 1rem;
   margin-top: 0.75rem;
   border-top: 1px solid #e2e8f0;
+  gap: 1rem;
+}
+
+.wine-price-large {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #2d3748;
+  margin-right: 0.5rem;
+}
+
+.wine-score-inline {
+  font-size: 1.125rem;
+  color: #a0aec0;
+  white-space: nowrap;
 }
 
 .wine-actions {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  flex-wrap: nowrap;
-}
-
-.btn-compare {
-  background: #e2e8f0;
-  color: #4a5568;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 8px;
-  font-weight: 500;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  white-space: nowrap;
-}
-
-.btn-compare:hover:not(:disabled) {
-  background: #cbd5e0;
-  transform: translateY(-1px);
-}
-
-.btn-compare.active {
-  background: #22c55e;
-  color: white;
-}
-
-.btn-compare:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-modern.btn-small {
-  white-space: nowrap;
   flex-shrink: 0;
 }
 
@@ -1205,6 +1147,7 @@ body {
 .icon-small {
   width: 20px;
   height: 20px;
+  flex-shrink: 0;
 }
 
 .ai-chat-messages {
@@ -1554,6 +1497,11 @@ body {
 .transition-opacity { transition-property: opacity; }
 .duration-300 { transition-duration: 300ms; }
 
+/* Hide old tasting summary if it somehow appears */
+.tasting-summary {
+    display: none !important;
+}
+
 /* Tasting Tracker Side Panel */
 .tasting-tracker-tab {
   position: fixed;
@@ -1839,30 +1787,6 @@ body {
   text-align: center;
 }
 
-/* Mobile responsive */
-@media (max-width: 768px) {
-  .wine-footer {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.75rem;
-  }
-  
-  .wine-actions {
-    flex-direction: column;
-    align-items: stretch;
-    width: 100%;
-  }
-  
-  .btn-compare {
-    width: 100%;
-    justify-content: center;
-  }
-  
-  .btn-modern.btn-small {
-    width: 100%;
-  }
-}
-
 /* Wine Comparison Feature */
 .btn-compare {
   background: #e2e8f0;
@@ -1877,7 +1801,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  margin-left: 0.5rem;
+  white-space: nowrap;
 }
 
 .btn-compare:hover:not(:disabled) {
@@ -1893,12 +1817,6 @@ body {
 .btn-compare:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.wine-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 }
 
 .comparison-badge {
@@ -2192,6 +2110,40 @@ body {
 
 /* Mobile responsive */
 @media (max-width: 768px) {
+  .tasting-tracker-panel {
+    width: 100%;
+    max-width: 100vw;
+  }
+  
+  .tasting-tracker-tab {
+    top: auto;
+    bottom: 100px;
+    transform: none;
+  }
+  
+  .tasting-tracker-tab.tab-open {
+    transform: translateX(100%);
+  }
+
+  .wine-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  
+  .wine-actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 0.5rem;
+  }
+  
+  .btn-compare,
+  .btn-modern.btn-small {
+    width: 100%;
+    justify-content: center;
+  }
+
   .comparison-bar {
     bottom: -300px;
   }
@@ -2203,15 +2155,21 @@ body {
   .comparison-grid {
     grid-template-columns: 1fr;
   }
-  
-  .wine-actions {
-    flex-direction: column;
-    align-items: stretch;
+}
+
+/* For medium screens, stack buttons if needed */
+@media (max-width: 1024px) {
+  .wine-card-modern .wine-actions {
+    flex-wrap: wrap;
   }
   
   .btn-compare {
-    margin-left: 0;
-    margin-top: 0.5rem;
-    justify-content: center;
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+  
+  .btn-modern.btn-small {
+    font-size: 13px;
+    padding: 6px 16px;
   }
 }
