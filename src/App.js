@@ -1525,14 +1525,15 @@ const App = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const winesPerPage = 12;
 
-    // Initialize
-    useEffect(() => {
-        // Check if welcome popup should be shown
-        const hidePopup = localStorage.getItem('hideWelcomePopup');
-        if (!hidePopup) {
-            setShowWelcomePopup(true);
-        }
+// Initialize
+useEffect(() => {
+    // Check if welcome popup should be shown
+    const hidePopup = localStorage.getItem('hideWelcomePopup');
+    if (!hidePopup) {
+        setShowWelcomePopup(true);
+    }
 
+<<<<<<< HEAD
         // Track page view
         trackEvent('page_view', { page_title: 'Wine Top 100' });
 
@@ -1554,6 +1555,42 @@ const App = () => {
             trackEvent('view_shared_list', { wine_count: wineIds.length });
         }
     }, []);
+=======
+    // Track page view
+    trackEvent('page_view', { page_title: 'Wine Top 100' });
+
+    // Check for shared wine or list in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const sharedWineId = urlParams.get('wine');
+    const sharedTastedList = urlParams.get('tasted');
+
+    if (sharedWineId) {
+        // Open specific wine
+        const wine = wines.find(w => w.id === parseInt(sharedWineId));
+        if (wine) {
+            setSelectedWine(wine);
+            trackEvent('view_shared_wine', { wine_id: sharedWineId });
+        }
+    }
+
+    if (sharedTastedList) {
+        // Import shared tasting list
+        const wineIds = sharedTastedList.split(',');
+        const newTastingRecord = {};
+        wineIds.forEach(id => {
+            newTastingRecord[id] = 'tasted';
+        });
+        setTastingRecord(prevRecord => ({...prevRecord, ...newTastingRecord}));
+        trackEvent('view_shared_list', { wine_count: wineIds.length });
+        
+        // Show a notification
+        alert(`Imported ${wineIds.length} wines to your tasting list!`);
+        
+        // Open the tasting panel to show the imported wines
+        setShowTastingPanel(true);
+    }
+}, []);
+>>>>>>> a4f0abd (Describe what you changed)
 
     useEffect(() => {
         localStorage.setItem('tastingRecord', JSON.stringify(tastingRecord));
